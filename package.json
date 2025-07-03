@@ -1,0 +1,151 @@
+{
+	"name": "free-ai-code-reviewer",
+	"displayName": "Free AI Code Reviewer",
+	"description": "Free AI-powered code review extension for VS Code with OpenRouter, Gemini, and custom AI providers",
+	"version": "1.0.0",
+	"publisher": "free-ai-code-reviewer",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/your-username/vscode-code-review-extension.git"
+	},
+	"license": "MIT",
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"Linters",
+		"Other",
+		"Machine Learning"
+	],
+	"keywords": [
+		"ai",
+		"code review",
+		"openrouter",
+		"gemini",
+		"code quality",
+		"static analysis",
+		"linter",
+		"free"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"configuration": {
+			"title": "Free AI Code Reviewer",
+			"properties": {
+				"freeAICodeReviewer.provider": {
+					"type": "string",
+					"enum": [
+						"openrouter",
+						"gemini",
+						"custom"
+					],
+					"default": "openrouter",
+					"description": "AI provider to use for code review"
+				},
+				"freeAICodeReviewer.model": {
+					"type": "string",
+					"default": "",
+					"description": "Model to use for code review"
+				},
+				"freeAICodeReviewer.customEndpoint": {
+					"type": "string",
+					"default": "",
+					"description": "Custom API endpoint URL (for custom provider)"
+				},
+				"freeAICodeReviewer.customHeaders": {
+					"type": "object",
+					"default": {},
+					"description": "Custom headers for API requests (for custom provider)"
+				},
+				"freeAICodeReviewer.apiKey.openrouter": {
+					"type": "string",
+					"default": "",
+					"description": "API key for OpenRouter provider (stored securely)"
+				},
+				"freeAICodeReviewer.apiKey.gemini": {
+					"type": "string",
+					"default": "",
+					"description": "API key for Gemini provider (stored securely)"
+				},
+				"freeAICodeReviewer.apiKey.custom": {
+					"type": "string",
+					"default": "",
+					"description": "API key for custom provider (stored securely)"
+				}
+			}
+		},
+		"commands": [
+			{
+				"command": "freeAICodeReviewer.setApiKey",
+				"title": "Set API Key",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.reviewCurrentFile",
+				"title": "Review Current File",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.reviewSelectedFiles",
+				"title": "Review Selected Files",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.reviewChangedFiles",
+				"title": "Review Changed Files",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.clearDiagnostics",
+				"title": "Clear Review Results",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.configureProvider",
+				"title": "Configure Provider",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.selectModel",
+				"title": "Select Model",
+				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.showStatistics",
+				"title": "Show Statistics",
+				"category": "Free AI Code Reviewer"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js",
+		"package": "vsce package",
+		"deploy": "vsce publish"
+	},
+	"dependencies": {
+		"simple-git": "^3.19.1",
+		"axios": "^1.6.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.74.0",
+		"@types/node": "16.x",
+		"@types/mocha": "^10.0.1",
+		"@types/glob": "^8.0.0",
+		"@typescript-eslint/eslint-plugin": "^5.45.0",
+		"@typescript-eslint/parser": "^5.45.0",
+		"@vscode/test-electron": "^2.2.0",
+		"@vscode/vsce": "^2.15.0",
+		"eslint": "^8.28.0",
+		"glob": "^8.0.3",
+		"mocha": "^10.1.0",
+		"typescript": "^4.9.4"
+	}
+}
