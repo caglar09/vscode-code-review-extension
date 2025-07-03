@@ -75,16 +75,20 @@ export class GeminiProvider implements IAgentProvider {
                 return [];
             }
 
+            console.log('Raw AI response:', response);
+
             // JSON'u temizle - daha kapsamlı temizlik
             let cleanedResponse = response
                 .replace(/```json|```/g, '') // Markdown kod bloklarını kaldır
-                .replace(/^[^{]*/, '') // JSON'dan önce gelen metni kaldır
-                .replace(/[^}]*$/, '') // JSON'dan sonra gelen metni kaldır
+                .replace(/^[^{\[]*/, '') // JSON'dan önce gelen metni kaldır
+                .replace(/[^}\]]*$/, '') // JSON'dan sonra gelen metni kaldır
                 .trim();
 
+            console.log('Cleaned response:', cleanedResponse);
+
             // Eğer hala JSON bulunamazsa, JSON'u bulmaya çalış
-            if (!cleanedResponse.startsWith('{')) {
-                const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (!cleanedResponse.startsWith('{') && !cleanedResponse.startsWith('[')) {
+                const jsonMatch = response.match(/[\{\[][\s\S]*[\}\]]/);
                 if (jsonMatch) {
                     cleanedResponse = jsonMatch[0];
                 } else {
@@ -99,9 +103,26 @@ export class GeminiProvider implements IAgentProvider {
 
             // JSON'daki kaçırılmamış tırnak işaretlerini düzelt
             cleanedResponse = this.fixUnescapedQuotes(cleanedResponse);
+            
+            // Son kontrol: geçersiz karakterleri temizle
+            cleanedResponse = this.sanitizeJson(cleanedResponse);
+
+            console.log('Final cleaned response:', cleanedResponse);
 
             const parsed = JSON.parse(cleanedResponse);
 
+            // Eğer direkt array ise
+            if (Array.isArray(parsed)) {
+                return parsed.map((comment: any) => ({
+                    message: comment.message || 'Bilinmeyen yorum',
+                    line: Math.max(0, (comment.line || 1) - 1), // 0-indexed'e çevir
+                    column: comment.column || 0,
+                    severity: this.mapSeverity(comment.severity),
+                    category: comment.category
+                }));
+            }
+
+            // Eğer object ise ve comments property'si varsa
             if (!parsed.comments || !Array.isArray(parsed.comments)) {
                 return [];
             }
@@ -140,6 +161,27 @@ export class GeminiProvider implements IAgentProvider {
             );
         } catch (error) {
             console.warn('Quote fixing failed, returning original:', error);
+            return jsonString;
+        }
+    }
+
+    /**
+     * JSON string'ini temizler ve geçersiz karakterleri kaldırır
+     */
+    private sanitizeJson(jsonString: string): string {
+        try {
+            // Kontrol karakterlerini kaldır
+            let sanitized = jsonString.replace(/[\x00-\x1F\x7F]/g, '');
+            
+            // Trailing comma'ları kaldır
+            sanitized = sanitized.replace(/,\s*([}\]])/g, '$1');
+            
+            // Çift virgülleri tek virgüle çevir
+            sanitized = sanitized.replace(/,,+/g, ',');
+            
+            return sanitized;
+        } catch (error) {
+            console.warn('JSON sanitization failed, returning original:', error);
             return jsonString;
         }
     }

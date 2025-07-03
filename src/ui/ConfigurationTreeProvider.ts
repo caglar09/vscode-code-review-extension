@@ -10,6 +10,7 @@ export enum ConfigItemType {
     Model = 'model',
     ApiKey = 'apiKey',
     CustomEndpoint = 'customEndpoint',
+    ParallelReviewCount = 'parallelReviewCount',
     Actions = 'actions'
 }
 
@@ -40,6 +41,8 @@ export class ConfigurationItem extends vscode.TreeItem {
                 return this.value ? 'API anahtarı ayarlanmış' : 'API anahtarı ayarlanmamış';
             case ConfigItemType.CustomEndpoint:
                 return `Özel endpoint: ${this.value || 'Ayarlanmamış'}`;
+            case ConfigItemType.ParallelReviewCount:
+                return `Paralel inceleme sayısı: ${this.value || '3'} dosya`;
             default:
                 return this.label;
         }
@@ -55,6 +58,8 @@ export class ConfigurationItem extends vscode.TreeItem {
                 return new vscode.ThemeIcon(this.value ? 'key' : 'warning');
             case ConfigItemType.CustomEndpoint:
                 return new vscode.ThemeIcon('link');
+            case ConfigItemType.ParallelReviewCount:
+                return new vscode.ThemeIcon('layers');
             case ConfigItemType.Actions:
                 return new vscode.ThemeIcon('tools');
             default:
@@ -162,6 +167,20 @@ export class ConfigurationTreeProvider implements vscode.TreeDataProvider<Config
                 }
             ));
         }
+
+        // Paralel inceleme sayısı
+        const parallelCount = ConfigurationManager.getParallelReviewCount();
+        items.push(new ConfigurationItem(
+            `Paralel İnceleme: ${parallelCount} dosya`,
+            ConfigItemType.ParallelReviewCount,
+            vscode.TreeItemCollapsibleState.None,
+            parallelCount.toString(),
+            {
+                command: 'freeAICodeReviewer.ui.setParallelReviewCount',
+                title: 'Paralel İnceleme Sayısını Ayarla',
+                arguments: []
+            }
+        ));
 
         // Eylemler bölümü
         items.push(new ConfigurationItem(

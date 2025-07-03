@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // UI bileşenlerini başlat
         const treeProvider = new ConfigurationTreeProvider();
-        const reviewedFilesProvider = new ReviewedFilesTreeProvider();
+        const reviewedFilesProvider = new ReviewedFilesTreeProvider(context);
         const uiCommandManager = new UICommandManager(treeProvider);
 
         // TreeView'ları kaydet

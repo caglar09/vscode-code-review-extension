@@ -157,6 +157,28 @@ export class ConfigurationManager {
     }
 
     /**
+     * Paralel inceleme sayısını getirir
+     * @returns Paralel inceleme sayısı (1-10 arası)
+     */
+    static getParallelReviewCount(): number {
+        const config = vscode.workspace.getConfiguration(this.EXTENSION_ID);
+        const count = config.get<number>('parallelReviewCount', 3);
+        
+        // Güvenlik kontrolü: 1-10 arası olmalı
+        return Math.max(1, Math.min(10, count));
+    }
+
+    /**
+     * Paralel inceleme sayısını günceller
+     * @param count Yeni paralel inceleme sayısı (1-10 arası)
+     */
+    static async updateParallelReviewCount(count: number): Promise<void> {
+        const config = vscode.workspace.getConfiguration(this.EXTENSION_ID);
+        const validCount = Math.max(1, Math.min(10, count));
+        await config.update('parallelReviewCount', validCount, vscode.ConfigurationTarget.Global);
+    }
+
+    /**
      * Varsayılan yapılandırmayı sıfırlar
      */
     static async resetToDefaults(): Promise<void> {
@@ -166,6 +188,7 @@ export class ConfigurationManager {
         await config.update('model', '', vscode.ConfigurationTarget.Global);
         await config.update('customEndpoint', '', vscode.ConfigurationTarget.Global);
         await config.update('customHeaders', {}, vscode.ConfigurationTarget.Global);
+        await config.update('parallelReviewCount', 3, vscode.ConfigurationTarget.Global);
 
         // API anahtarlarını temizle
         const providers = ProviderFactory.getAvailableProviders();

@@ -102,37 +102,73 @@ export class CodeReviewManager {
      * @param uris İncelenecek dosya URI'leri
      */
     async reviewMultipleFiles(uris: vscode.Uri[]): Promise<void> {
+        const parallelCount = ConfigurationManager.getParallelReviewCount();
+        
         const progress = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'AI Kod İncelemesi',
+            title: `AI Kod İncelemesi (${parallelCount} paralel)`,
             cancellable: true
         }, async (progress, token) => {
             const totalFiles = uris.length;
             let processedFiles = 0;
+            let errorCount = 0;
 
-            for (const uri of uris) {
+            // Dosyaları paralel gruplar halinde işle
+            for (let i = 0; i < uris.length; i += parallelCount) {
                 if (token.isCancellationRequested) {
                     break;
                 }
 
-                try {
-                    const document = await vscode.workspace.openTextDocument(uri);
-                    await this.reviewCurrentFile(document);
-                    processedFiles++;
+                // Mevcut batch'i al
+                const batch = uris.slice(i, i + parallelCount);
+                
+                // Batch'teki dosyaları paralel olarak işle
+                const batchPromises = batch.map(async (uri) => {
+                    try {
+                        const document = await vscode.workspace.openTextDocument(uri);
+                        await this.reviewCurrentFile(document);
+                        return { success: true, uri };
+                    } catch (error) {
+                        this.outputChannel.appendLine(`Dosya işlenirken hata (${uri.fsPath}): ${error}`);
+                        return { success: false, uri, error };
+                    }
+                });
 
-                    progress.report({
-                        increment: (100 / totalFiles),
-                        message: `${processedFiles}/${totalFiles} dosya işlendi`
-                    });
-                } catch (error) {
-                    this.outputChannel.appendLine(`Dosya işlenirken hata (${uri.fsPath}): ${error}`);
+                // Batch'in tamamlanmasını bekle
+                const batchResults = await Promise.all(batchPromises);
+                
+                // Sonuçları say
+                const batchSuccessCount = batchResults.filter(r => r.success).length;
+                const batchErrorCount = batchResults.filter(r => !r.success).length;
+                
+                processedFiles += batchSuccessCount;
+                errorCount += batchErrorCount;
+
+                // İlerleme durumunu güncelle
+                const completedFiles = i + batch.length;
+                progress.report({
+                    increment: (batch.length / totalFiles) * 100,
+                    message: `${Math.min(completedFiles, totalFiles)}/${totalFiles} dosya işlendi (${errorCount} hata)`
+                });
+
+                // Kısa bir bekleme süresi ekle (API rate limiting için)
+                if (i + parallelCount < uris.length && !token.isCancellationRequested) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
             }
 
-            return processedFiles;
+            return { processedFiles, errorCount };
         });
 
-        vscode.window.showInformationMessage(`Toplu inceleme tamamlandı: ${progress} dosya işlendi.`);
+        const message = progress.errorCount > 0 
+            ? `Toplu inceleme tamamlandı: ${progress.processedFiles} dosya başarılı, ${progress.errorCount} hata`
+            : `Toplu inceleme tamamlandı: ${progress.processedFiles} dosya işlendi.`;
+        
+        if (progress.errorCount > 0) {
+            vscode.window.showWarningMessage(message);
+        } else {
+            vscode.window.showInformationMessage(message);
+        }
     }
 
     /**
@@ -307,7 +343,10 @@ AI Kod İncelemesi İstatistikleri:
 
         // Reviewed files provider'a dosyayı ve problemleri ekle
         if (this.reviewedFilesProvider) {
+            console.log(`[CodeReviewManager] Adding ${uri.fsPath} to reviewed files with ${comments.length} issues`);
             this.reviewedFilesProvider.addReviewedFile(uri.fsPath, comments.length, issues);
+        } else {
+            console.log(`[CodeReviewManager] reviewedFilesProvider is not set!`);
         }
 
         // Detaylı log

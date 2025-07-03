@@ -75,6 +75,14 @@
 					"type": "string",
 					"default": "",
 					"description": "API key for custom provider (stored securely)"
+				},
+				"freeAICodeReviewer.parallelReviewCount": {
+					"type": "number",
+					"default": 3,
+					"minimum": 1,
+					"maximum": 10,
+					"description": "Number of files to review in parallel (1-10). Higher values may increase speed but consume more API quota.",
+					"markdownDescription": "**Paralel İnceleme Sayısı**\n\nAynı anda kaç dosyanın paralel olarak inceleneceğini belirler.\n\n- **1**: Sıralı inceleme (varsayılan eski davranış)\n- **2-5**: Orta düzey paralellik (önerilen)\n- **6-10**: Yüksek paralellik (API limitlerini aşabilir)\n\n⚠️ **Dikkat**: Yüksek değerler API kotanızı hızla tüketebilir."
 				}
 			}
 		},
@@ -197,12 +205,20 @@
 				"title": "Set Custom Endpoint"
 			},
 			{
+				"command": "freeAICodeReviewer.ui.setParallelReviewCount",
+				"title": "Set Parallel Review Count"
+			},
+			{
 				"command": "freeAICodeReviewer.ui.testConnection",
 				"title": "Test Connection"
 			},
 			{
 				"command": "freeAICodeReviewer.ui.resetConfiguration",
 				"title": "Reset Configuration"
+			},
+			{
+				"command": "freeAICodeReviewer.clearReviewResults",
+				"title": "Clear Review Results"
 			},
 			{
 				"command": "freeAICodeReviewer.refreshReviewedFiles",

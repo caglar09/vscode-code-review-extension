@@ -84,8 +84,10 @@ export class ReviewedFilesTreeProvider implements vscode.TreeDataProvider<Review
     readonly onDidChangeTreeData: vscode.Event<ReviewedFileItem | undefined | null | void> = this._onDidChangeTreeData.event;
     
     private reviewedFiles: ReviewedFileInfo[] = [];
+    private context: vscode.ExtensionContext;
     
-    constructor() {
+    constructor(context: vscode.ExtensionContext) {
+        this.context = context;
         // Load reviewed files from workspace state if available
         this.loadReviewedFiles();
     }
@@ -119,6 +121,8 @@ export class ReviewedFilesTreeProvider implements vscode.TreeDataProvider<Review
     }
     
     addReviewedFile(filePath: string, issuesCount: number, issues?: ReviewIssue[]): void {
+        console.log(`[ReviewedFilesTreeProvider] Adding file: ${filePath} with ${issuesCount} issues`);
+        
         const existingIndex = this.reviewedFiles.findIndex(f => f.filePath === filePath);
         const status: 'reviewed' | 'has-issues' | 'clean' = issuesCount === 0 ? 'clean' : 'has-issues';
         
@@ -133,9 +137,11 @@ export class ReviewedFilesTreeProvider implements vscode.TreeDataProvider<Review
         if (existingIndex >= 0) {
             // Update existing file
             this.reviewedFiles[existingIndex] = fileInfo;
+            console.log(`[ReviewedFilesTreeProvider] Updated existing file at index ${existingIndex}`);
         } else {
             // Add new file
             this.reviewedFiles.unshift(fileInfo); // Add to beginning
+            console.log(`[ReviewedFilesTreeProvider] Added new file. Total files: ${this.reviewedFiles.length}`);
         }
         
         // Keep only last 50 reviewed files
@@ -145,6 +151,7 @@ export class ReviewedFilesTreeProvider implements vscode.TreeDataProvider<Review
         
         this.saveReviewedFiles();
         this.refresh();
+        console.log(`[ReviewedFilesTreeProvider] File added and refreshed`);
     }
     
     clearReviewedFiles(): void {
@@ -160,8 +167,7 @@ export class ReviewedFilesTreeProvider implements vscode.TreeDataProvider<Review
     }
     
     private loadReviewedFiles(): void {
-        const workspaceState = vscode.workspace.getConfiguration('freeAICodeReviewer');
-        const savedFiles = workspaceState.get<ReviewedFileInfo[]>('reviewedFiles', []);
+        const savedFiles = this.context.workspaceState.get<ReviewedFileInfo[]>('reviewedFiles', []);
         
         // Convert date strings back to Date objects
         this.reviewedFiles = savedFiles.map(file => ({
@@ -171,8 +177,7 @@ export class ReviewedFilesTreeProvider implements vscode.TreeDataProvider<Review
     }
     
     private saveReviewedFiles(): void {
-        const workspaceState = vscode.workspace.getConfiguration('freeAICodeReviewer');
-        workspaceState.update('reviewedFiles', this.reviewedFiles, vscode.ConfigurationTarget.Workspace);
+        this.context.workspaceState.update('reviewedFiles', this.reviewedFiles);
     }
     
     getReviewedFiles(): ReviewedFileInfo[] {

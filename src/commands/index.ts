@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { CodeReviewManager } from '../managers/CodeReviewManager';
+import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { ProviderFactory } from '../providers/ProviderFactory';
+import { ProviderConfig } from '../types';
 
 /**
  * Eklenti komutlarını yöneten sınıf
@@ -66,6 +67,13 @@ export class CommandManager {
             () => this.showStatistics()
         );
 
+        // UI komutları UICommandManager'da kayıtlı olduğu için burada kaldırıldı
+
+        const clearReviewResultsCommand = vscode.commands.registerCommand(
+            'freeAICodeReviewer.clearReviewResults',
+            () => this.clearDiagnostics()
+        );
+
         // Komutları context'e ekle
         context.subscriptions.push(
             setApiKeyCommand,
@@ -75,7 +83,8 @@ export class CommandManager {
             clearDiagnosticsCommand,
             configureProviderCommand,
             selectModelCommand,
-            showStatisticsCommand
+            showStatisticsCommand,
+            clearReviewResultsCommand
         );
     }
 
@@ -299,5 +308,124 @@ export class CommandManager {
      */
     private showStatistics(): void {
         this.codeReviewManager.showReviewStatistics();
+    }
+
+    /**
+     * Özel endpoint ayarlama komutu
+     */
+    private async setCustomEndpoint(): Promise<void> {
+        try {
+            const currentConfig = ConfigurationManager.getProviderConfig();
+            
+            const customEndpoint = await vscode.window.showInputBox({
+                prompt: 'API endpoint URL\'sini girin',
+                placeHolder: 'https://api.example.com/v1/chat/completions',
+                value: currentConfig.customEndpoint || '',
+                validateInput: (value) => {
+                    if (!value || !value.startsWith('http')) {
+                        return 'Geçerli bir URL girin';
+                    }
+                    return null;
+                }
+            });
+
+            if (customEndpoint === undefined) {
+                return;
+            }
+
+            await ConfigurationManager.updateProviderConfig({
+                customEndpoint
+            });
+
+            vscode.window.showInformationMessage('Özel endpoint başarıyla ayarlandı.');
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Endpoint ayarlanırken hata: ${error}`);
+        }
+    }
+
+    /**
+     * Paralel inceleme sayısını ayarlama komutu
+     */
+    private async setParallelReviewCount(): Promise<void> {
+        try {
+            const currentCount = ConfigurationManager.getParallelReviewCount();
+            
+            const countOptions = [];
+            for (let i = 1; i <= 10; i++) {
+                countOptions.push({
+                    label: `${i} dosya`,
+                    description: i === currentCount ? '(Mevcut)' : '',
+                    value: i
+                });
+            }
+
+            const selectedCount = await vscode.window.showQuickPick(countOptions, {
+                placeHolder: 'Paralel inceleme sayısını seçin',
+                title: 'Paralel İnceleme Sayısı'
+            });
+
+            if (!selectedCount) {
+                return;
+            }
+
+            await ConfigurationManager.updateParallelReviewCount(selectedCount.value);
+
+            vscode.window.showInformationMessage(
+                `Paralel inceleme sayısı ${selectedCount.value} olarak ayarlandı.`
+            );
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Paralel inceleme sayısı ayarlanırken hata: ${error}`);
+        }
+    }
+
+    /**
+     * Bağlantı testi komutu
+     */
+    private async testConnection(): Promise<void> {
+        try {
+            const config = ConfigurationManager.getProviderConfig();
+            
+            if (!config.providerId || !config.apiKey || !config.model) {
+                vscode.window.showWarningMessage('Önce sağlayıcı, API anahtarı ve model ayarlarını yapın.');
+                return;
+            }
+
+            vscode.window.showInformationMessage('Bağlantı test ediliyor...');
+
+            // Basit bir test isteği gönder
+            const provider = ProviderFactory.createProvider(config);
+            await provider.performReview(config.apiKey, config.model, '// Test kodu\nconsole.log("test");', 'javascript');
+
+            vscode.window.showInformationMessage('Bağlantı başarılı!');
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Bağlantı testi başarısız: ${error}`);
+        }
+    }
+
+    /**
+     * Yapılandırmayı sıfırlama komutu
+     */
+    private async resetConfiguration(): Promise<void> {
+        try {
+            const confirmation = await vscode.window.showWarningMessage(
+                'Tüm yapılandırma ayarları sıfırlanacak. Devam etmek istiyor musunuz?',
+                { modal: true },
+                'Evet',
+                'Hayır'
+            );
+
+            if (confirmation !== 'Evet') {
+                return;
+            }
+
+            await ConfigurationManager.resetToDefaults();
+            vscode.window.showInformationMessage('Yapılandırma başarıyla sıfırlandı.');
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Yapılandırma sıfırlanırken hata: ${error}`);
+        }
     }
 }
