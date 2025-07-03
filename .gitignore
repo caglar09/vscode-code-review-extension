@@ -101,3 +101,5 @@ Thumbs.db
 # Extension specific
 *.vsix
 vsc-extension-quickstart.md
+
+.vscode-test

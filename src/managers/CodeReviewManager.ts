@@ -4,6 +4,7 @@ import { ProviderFactory } from '../providers/ProviderFactory';
 import { ConfigurationManager } from './ConfigurationManager';
 import { DiagnosticsManager } from './DiagnosticsManager';
 import { ReviewComment } from '../types';
+import { ReviewedFilesTreeProvider, ReviewIssue } from '../ReviewedFilesTreeProvider';
 
 /**
  * Kod inceleme süreçlerini yöneten ana sınıf
@@ -12,11 +13,31 @@ export class CodeReviewManager {
     private git: simpleGit.SimpleGit;
     private diagnosticsManager: DiagnosticsManager;
     private outputChannel: vscode.OutputChannel;
+    private reviewedFilesProvider?: ReviewedFilesTreeProvider;
 
     constructor() {
-        this.git = simpleGit.simpleGit();
+        // Workspace root dizinini al ve Git'i o dizinde başlat
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        console.log("workspaceRoot", workspaceRoot);
+
+        this.git = workspaceRoot ? simpleGit.simpleGit(workspaceRoot) : simpleGit.simpleGit();
+        console.log(this.git.getRemotes());
+
         this.diagnosticsManager = DiagnosticsManager.getInstance();
         this.outputChannel = vscode.window.createOutputChannel('Free AI Code Reviewer');
+    }
+
+    /**
+     * Workspace'in Git repository olup olmadığını kontrol eder
+     * @returns Git repository durumu
+     */
+    private async isGitRepository(): Promise<boolean> {
+        try {
+            await this.git.status();
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     /**
@@ -26,11 +47,11 @@ export class CodeReviewManager {
     async reviewCurrentFile(document: vscode.TextDocument): Promise<void> {
         try {
             this.outputChannel.appendLine(`İnceleme başlatılıyor: ${document.fileName}`);
-            
+
             // Yapılandırmayı kontrol et
             const config = ConfigurationManager.getProviderConfig();
             const validation = ConfigurationManager.validateConfig(config);
-            
+
             if (!validation.isValid) {
                 throw new Error(validation.error);
             }
@@ -53,9 +74,9 @@ export class CodeReviewManager {
 
             // Sonuçları işle
             this.procesReviewResults(document.uri, comments);
-            
+
             this.outputChannel.appendLine(`İnceleme tamamlandı: ${comments.length} yorum bulundu`);
-            
+
             if (comments.length > 0) {
                 vscode.window.showInformationMessage(
                     `AI kod incelemesi tamamlandı. ${comments.length} öneri bulundu.`,
@@ -98,7 +119,7 @@ export class CodeReviewManager {
                     const document = await vscode.workspace.openTextDocument(uri);
                     await this.reviewCurrentFile(document);
                     processedFiles++;
-                    
+
                     progress.report({
                         increment: (100 / totalFiles),
                         message: `${processedFiles}/${totalFiles} dosya işlendi`
@@ -119,8 +140,22 @@ export class CodeReviewManager {
      */
     async reviewChangedFiles(): Promise<void> {
         try {
+            // Git repository kontrolü
+            const isGitRepo = await this.isGitRepository();
+            if (!isGitRepo) {
+                vscode.window.showErrorMessage(
+                    'Bu özellik Git repository\'si gerektirir. Lütfen workspace\'inizi Git ile başlatın (git init) veya mevcut bir Git repository\'sinde çalışın.',
+                    'Git Nasıl Başlatılır?'
+                ).then(selection => {
+                    if (selection === 'Git Nasıl Başlatılır?') {
+                        vscode.env.openExternal(vscode.Uri.parse('https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository'));
+                    }
+                });
+                return;
+            }
+
             const changedFiles = await this.getChangedFiles();
-            
+
             if (changedFiles.length === 0) {
                 vscode.window.showInformationMessage('Değişen dosya bulunamadı.');
                 return;
@@ -140,7 +175,7 @@ export class CodeReviewManager {
     async onFileSaved(document: vscode.TextDocument): Promise<void> {
         const config = vscode.workspace.getConfiguration('freeAICodeReviewer');
         const autoReview = config.get<boolean>('autoReviewOnSave', false);
-        
+
         if (autoReview && this.shouldReviewFile(document)) {
             await this.reviewCurrentFile(document);
         }
@@ -177,7 +212,7 @@ AI Kod İncelemesi İstatistikleri:
 • Uyarı: ${stats.warningCount}
 • Bilgi: ${stats.infoCount}
 • İpucu: ${stats.hintCount}`;
-        
+
         this.outputChannel.appendLine(message);
         this.outputChannel.show();
     }
@@ -189,6 +224,14 @@ AI Kod İncelemesi İstatistikleri:
      */
     private async getFileDiff(filePath: string): Promise<string> {
         try {
+            // Git repository kontrolü
+            const isGitRepo = await this.isGitRepository();
+            if (!isGitRepo) {
+                // Git repository değilse dosyanın tamamını döndür
+                const document = await vscode.workspace.openTextDocument(filePath);
+                return `+++ ${filePath}\n${document.getText().split('\n').map(line => `+${line}`).join('\n')}`;
+            }
+
             // Staged değişiklikler varsa onları al
             const stagedDiff = await this.git.diff(['--cached', filePath]);
             if (stagedDiff && stagedDiff.trim().length > 0) {
@@ -234,6 +277,14 @@ AI Kod İncelemesi İstatistikleri:
     }
 
     /**
+     * ReviewedFilesTreeProvider'ı ayarlar
+     * @param provider ReviewedFilesTreeProvider instance
+     */
+    setReviewedFilesProvider(provider: ReviewedFilesTreeProvider): void {
+        this.reviewedFilesProvider = provider;
+    }
+
+    /**
      * İnceleme sonuçlarını işler ve gösterir
      * @param uri Dosya URI'si
      * @param comments İnceleme yorumları
@@ -241,10 +292,22 @@ AI Kod İncelemesi İstatistikleri:
     private procesReviewResults(uri: vscode.Uri, comments: ReviewComment[]): void {
         // Önceki sonuçları temizle
         this.diagnosticsManager.clearDiagnostics(uri);
-        
+
         // Yeni sonuçları ekle
         if (comments.length > 0) {
             this.diagnosticsManager.setDiagnostics(uri, comments);
+        }
+
+        // ReviewComment'leri ReviewIssue'ya dönüştür
+        const issues: ReviewIssue[] = comments.map(comment => ({
+            line: comment.line + 1, // VS Code 0-based, UI'da 1-based göstermek için +1
+            message: comment.message,
+            severity: this.mapSeverityToIssue(comment.severity)
+        }));
+
+        // Reviewed files provider'a dosyayı ve problemleri ekle
+        if (this.reviewedFilesProvider) {
+            this.reviewedFilesProvider.addReviewedFile(uri.fsPath, comments.length, issues);
         }
 
         // Detaylı log
@@ -252,6 +315,24 @@ AI Kod İncelemesi İstatistikleri:
         comments.forEach((comment, index) => {
             this.outputChannel.appendLine(`${index + 1}. Satır ${comment.line + 1}: ${comment.message}`);
         });
+    }
+
+    /**
+     * DiagnosticSeverity'yi ReviewIssue severity'ye dönüştürür
+     * @param severity VS Code DiagnosticSeverity
+     * @returns ReviewIssue severity
+     */
+    private mapSeverityToIssue(severity: vscode.DiagnosticSeverity): 'error' | 'warning' | 'info' {
+        switch (severity) {
+            case vscode.DiagnosticSeverity.Error:
+                return 'error';
+            case vscode.DiagnosticSeverity.Warning:
+                return 'warning';
+            case vscode.DiagnosticSeverity.Information:
+            case vscode.DiagnosticSeverity.Hint:
+            default:
+                return 'info';
+        }
     }
 
     /**
@@ -266,9 +347,9 @@ AI Kod İncelemesi İstatistikleri:
             'cpp', 'c', 'go', 'rust', 'php', 'ruby', 'swift', 'kotlin'
         ];
 
-        return supportedLanguages.includes(document.languageId) && 
-               !document.uri.fsPath.includes('node_modules') &&
-               !document.uri.fsPath.includes('.git');
+        return supportedLanguages.includes(document.languageId) &&
+            !document.uri.fsPath.includes('node_modules') &&
+            !document.uri.fsPath.includes('.git');
     }
 
     /**

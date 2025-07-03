@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { IAgentProvider, ReviewComment, AIModel } from '../types';
+import { PromptManager } from '../managers/PromptManager';
 import * as vscode from 'vscode';
 
 /**
@@ -38,14 +39,14 @@ export class OpenRouterProvider implements IAgentProvider {
         languageId: string
     ): Promise<ReviewComment[]> {
         try {
-            const prompt = this.createReviewPrompt(diff, languageId);
-            
+            const prompt = PromptManager.createReviewPrompt(diff, languageId);
+
             const response = await axios.post(this.chatEndpoint, {
                 model: model,
                 messages: [
                     {
                         role: 'system',
-                        content: 'Sen uzman bir kod gözden geçiricisisin. Kod değişikliklerini analiz et ve yapılandırılmış JSON formatında geri bildirim ver.'
+                        content: PromptManager.getSystemMessage()
                     },
                     {
                         role: 'user',
@@ -69,37 +70,14 @@ export class OpenRouterProvider implements IAgentProvider {
         }
     }
 
-    private createReviewPrompt(diff: string, languageId: string): string {
-        return `
-Lütfen aşağıdaki ${languageId} kod değişikliklerini incele ve geri bildirimlerini JSON formatında ver.
 
-Kod değişiklikleri:
-\`\`\`diff
-${diff}
-\`\`\`
-
-Geri bildirimini şu JSON formatında ver:
-{
-  "comments": [
-    {
-      "message": "Yorum metni",
-      "line": satır_numarası,
-      "severity": "error|warning|info",
-      "category": "kategori (opsiyonel)"
-    }
-  ]
-}
-
-Sadece JSON yanıtı ver, başka açıklama ekleme. Eğer sorun yoksa boş comments dizisi döndür.
-`;
-    }
 
     private parseAIResponse(response: string): ReviewComment[] {
         try {
             // JSON'u temizle ve parse et
             const cleanedResponse = response.replace(/```json|```/g, '').trim();
             const parsed = JSON.parse(cleanedResponse);
-            
+
             if (!parsed.comments || !Array.isArray(parsed.comments)) {
                 return [];
             }

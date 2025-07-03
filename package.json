@@ -4,6 +4,7 @@
 	"description": "Free AI-powered code review extension for VS Code with OpenRouter, Gemini, and custom AI providers",
 	"version": "1.0.0",
 	"publisher": "free-ai-code-reviewer",
+	"icon": "free_ai_reviewer.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/your-username/vscode-code-review-extension.git"
@@ -77,6 +78,62 @@
 				}
 			}
 		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "freeAICodeReviewer",
+					"title": "AI Code Reviewer",
+					"icon": "$(code-review)"
+				}
+			]
+		},
+		"views": {
+			"freeAICodeReviewer": [
+				{
+					"id": "freeAICodeReviewer.configuration",
+					"name": "Configuration",
+					"when": "true"
+				},
+				{
+					"id": "freeAICodeReviewer.reviewedFiles",
+					"name": "Reviewed Files",
+					"when": "true"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "freeAICodeReviewer.ui.refresh",
+					"when": "view == freeAICodeReviewer.configuration",
+					"group": "navigation"
+				},
+				{
+					"command": "freeAICodeReviewer.refreshReviewedFiles",
+					"when": "view == freeAICodeReviewer.reviewedFiles",
+					"group": "navigation"
+				},
+				{
+					"command": "freeAICodeReviewer.clearReviewedFiles",
+					"when": "view == freeAICodeReviewer.reviewedFiles",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "freeAICodeReviewer.removeReviewedFile",
+					"when": "view == freeAICodeReviewer.reviewedFiles && viewItem == reviewedFile",
+					"group": "inline"
+				}
+			],
+			"scm/title": [
+				{
+					"command": "freeAICodeReviewer.reviewChangedFilesAndFocus",
+					"when": "scmProvider == git",
+					"group": "navigation"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "freeAICodeReviewer.setApiKey",
@@ -117,6 +174,55 @@
 				"command": "freeAICodeReviewer.showStatistics",
 				"title": "Show Statistics",
 				"category": "Free AI Code Reviewer"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.refresh",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.selectProvider",
+				"title": "Select Provider"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.selectModel",
+				"title": "Select Model"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.setApiKey",
+				"title": "Set API Key"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.setCustomEndpoint",
+				"title": "Set Custom Endpoint"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.testConnection",
+				"title": "Test Connection"
+			},
+			{
+				"command": "freeAICodeReviewer.ui.resetConfiguration",
+				"title": "Reset Configuration"
+			},
+			{
+				"command": "freeAICodeReviewer.refreshReviewedFiles",
+				"title": "Refresh Reviewed Files",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "freeAICodeReviewer.clearReviewedFiles",
+				"title": "Clear Reviewed Files",
+				"icon": "$(clear-all)"
+			},
+			{
+				"command": "freeAICodeReviewer.removeReviewedFile",
+				"title": "Remove from List",
+				"icon": "$(close)"
+			},
+			{
+				"command": "freeAICodeReviewer.reviewChangedFilesAndFocus",
+				"title": "Review",
+				"icon": "$(code-review)"
 			}
 		]
 	},

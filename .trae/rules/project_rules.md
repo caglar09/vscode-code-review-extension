@@ -116,3 +116,23 @@ Bu bölüm, eklentinin nasıl inşa edilmesi gerektiğini tanımlar.
 * Kullanıcı arayüzü üzerinden özelleştirilebilir AI komut istemleri (prompt'lar).
 * Otomatik kod düzeltme ("hızlı düzeltme") eylemleri.
 * Git dışındaki sürüm kontrol sistemleri için destek.
+
+### 6. Dokümantasyon ve Proje Yönetimi Kuralları
+
+#### 6.1. README.md Güncelleme Kuralı
+* **Zorunlu Güncelleme:** Bu PRD dosyasında (`project_rules.md`) yapılan her değişiklik sonrasında, `/Users/caglar/Desktop/ReactProjects/vscode-code-review-extension/README.md` dosyası da güncellenmelidir.
+* **Güncelleme Kapsamı:** Yeni özellikler, değişen teknik gereksinimler, kullanıcı hikayeleri ve mimari değişiklikler README.md dosyasına yansıtılmalıdır.
+* **Tutarlılık:** README.md dosyasındaki bilgiler, PRD ile tutarlı olmalı ve kullanıcı dostu bir dilde yazılmalıdır.
+
+#### 6.2. Proje Mimarisi Değişiklik Kuralı
+* **Mimari Değişiklikler:** Proje mimarisinde etkili olan değişiklikler (yeni sınıflar, arayüzler, design pattern'ler, API değişiklikleri) yapıldığında, bu PRD dosyası (`project_rules.md`) da güncellenmelidir.
+* **Güncelleme Alanları:** 
+  * Teknik Gereksinimler ve Mimari bölümü (Bölüm 3)
+  * Kullanılacak VS Code API'ları listesi
+  * Provider mimarisi ve Strategy Pattern uygulaması
+  * Yeni eklenen sınıflar ve arayüzler
+* **Dokümantasyon Senkronizasyonu:** Kod değişiklikleri ile dokümantasyon arasında tutarlılık sağlanmalıdır.
+
+#### 6.3. Versiyon Kontrolü
+* **Versiyon Güncelleme:** Büyük özellik eklemeleri veya mimari değişiklikler sonrasında PRD versiyonu güncellenmelidir.
+* **Değişiklik Takibi:** Önemli değişiklikler tarih ile birlikte belgelenmelidir.

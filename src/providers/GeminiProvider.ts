@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { IAgentProvider, ReviewComment } from '../types';
+import { PromptManager } from '../managers/PromptManager';
 import * as vscode from 'vscode';
 
 /**
@@ -15,7 +16,7 @@ export class GeminiProvider implements IAgentProvider {
     async getModels(apiKey: string): Promise<string[]> {
         try {
             const response = await axios.get(`${this.baseUrl}/models?key=${apiKey}`);
-            
+
             const models = response.data.models || [];
             return models
                 .filter((model: any) => model.name.includes('gemini'))
@@ -33,9 +34,9 @@ export class GeminiProvider implements IAgentProvider {
         languageId: string
     ): Promise<ReviewComment[]> {
         try {
-            const prompt = this.createReviewPrompt(diff, languageId);
+            const prompt = PromptManager.createGeminiReviewPrompt(diff, languageId);
             const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${apiKey}`;
-            
+
             const response = await axios.post(endpoint, {
                 contents: [{
                     parts: [{
@@ -60,38 +61,47 @@ export class GeminiProvider implements IAgentProvider {
         }
     }
 
-    private createReviewPrompt(diff: string, languageId: string): string {
-        return `
-Sen uzman bir kod gözden geçiricisisin. Lütfen aşağıdaki ${languageId} kod değişikliklerini incele ve geri bildirimlerini JSON formatında ver.
 
-Kod değişiklikleri:
-\`\`\`diff
-${diff}
-\`\`\`
-
-Geri bildirimini şu JSON formatında ver:
-{
-  "comments": [
-    {
-      "message": "Yorum metni",
-      "line": satır_numarası,
-      "severity": "error|warning|info",
-      "category": "kategori (opsiyonel)"
-    }
-  ]
-}
-
-Sadece JSON yanıtı ver, başka açıklama ekleme. Eğer sorun yoksa boş comments dizisi döndür.
-Kod kalitesi, güvenlik, performans ve en iyi pratikler açısından değerlendir.
-`;
-    }
 
     private parseAIResponse(response: string): ReviewComment[] {
         try {
-            // JSON'u temizle ve parse et
-            const cleanedResponse = response.replace(/```json|```/g, '').trim();
+            if (!response || typeof response !== 'string') {
+                console.warn('Empty or invalid AI response received');
+                return [];
+            }
+
+            // Önce NO_COMMENT kontrolü yap
+            if (response.trim() === 'NO_COMMENT') {
+                return [];
+            }
+
+            // JSON'u temizle - daha kapsamlı temizlik
+            let cleanedResponse = response
+                .replace(/```json|```/g, '') // Markdown kod bloklarını kaldır
+                .replace(/^[^{]*/, '') // JSON'dan önce gelen metni kaldır
+                .replace(/[^}]*$/, '') // JSON'dan sonra gelen metni kaldır
+                .trim();
+
+            // Eğer hala JSON bulunamazsa, JSON'u bulmaya çalış
+            if (!cleanedResponse.startsWith('{')) {
+                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    cleanedResponse = jsonMatch[0];
+                } else {
+                    console.warn('No valid JSON found in AI response:', response);
+                    return [{
+                        message: 'AI yanıtında geçerli JSON formatı bulunamadı.',
+                        line: 0,
+                        severity: vscode.DiagnosticSeverity.Information
+                    }];
+                }
+            }
+
+            // JSON'daki kaçırılmamış tırnak işaretlerini düzelt
+            cleanedResponse = this.fixUnescapedQuotes(cleanedResponse);
+
             const parsed = JSON.parse(cleanedResponse);
-            
+
             if (!parsed.comments || !Array.isArray(parsed.comments)) {
                 return [];
             }
@@ -105,11 +115,32 @@ Kod kalitesi, güvenlik, performans ve en iyi pratikler açısından değerlendi
             }));
         } catch (error) {
             console.error('AI response parsing error:', error);
+            console.error('Original response:', response);
             return [{
-                message: 'AI yanıtı işlenirken hata oluştu.',
+                message: 'AI yanıtı işlenirken hata oluştu. Lütfen tekrar deneyin.',
                 line: 0,
                 severity: vscode.DiagnosticSeverity.Information
             }];
+        }
+    }
+
+    /**
+     * JSON içindeki kaçırılmamış tırnak işaretlerini düzeltir
+     */
+    private fixUnescapedQuotes(jsonString: string): string {
+        try {
+            // message alanındaki kaçırılmamış tırnak işaretlerini düzelt
+            return jsonString.replace(
+                /"message"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/g,
+                (match, content) => {
+                    // İçerikte kaçırılmamış tırnak işaretlerini kaçır
+                    const escapedContent = content.replace(/(?<!\\)"/g, '\\"');
+                    return `"message": "${escapedContent}"`;
+                }
+            );
+        } catch (error) {
+            console.warn('Quote fixing failed, returning original:', error);
+            return jsonString;
         }
     }
 

@@ -9,6 +9,9 @@ VS Code için ücretsiz AI destekli kod inceleme eklentisi. OpenRouter, Google G
 - **Git Entegrasyonu**: Değişen dosyaları otomatik tespit
 - **Gerçek Zamanlı Geri Bildirim**: VS Code Problems panelinde sonuçlar
 - **Toplu İnceleme**: Birden fazla dosyayı aynı anda inceleme
+- **İncelenen Dosyalar Görünümü**: ActivityBar'da özel panel ile incelenen dosyaları takip
+- **Source Control Entegrasyonu**: Commit butonunun yanında "Review" butonu
+- **Detaylı Problem Görünümü**: Her dosya için problemleri hiyerarşik olarak görüntüleme
 - **Özelleştirilebilir**: Kendi AI endpoint'inizi kullanın
 
 ## 📦 Kurulum
@@ -19,9 +22,18 @@ VS Code için ücretsiz AI destekli kod inceleme eklentisi. OpenRouter, Google G
 
 ## ⚙️ Yapılandırma
 
-### 1. API Anahtarı Ayarlama
+### 1. Sidebar UI ile Kolay Yapılandırma
+
+Eklenti artık sol sidebar'da "AI Code Reviewer" paneli ile kolay yapılandırma sunar:
+
+1. **Explorer** panelinde "AI Code Reviewer" bölümünü bulun
+2. Sağlayıcı, model, API anahtarı ayarlarını tek tıkla yapın
+3. Bağlantıyı test edin ve yapılandırmayı sıfırlayın
+
+### 2. Komut Paleti ile Yapılandırma (Alternatif)
 
 Komut paletini açın (`Ctrl+Shift+P`) ve şu komutu çalıştırın:
+
 ```
 Free AI Code Reviewer: Set API Key
 ```
@@ -29,27 +41,51 @@ Free AI Code Reviewer: Set API Key
 ### 2. Desteklenen Sağlayıcılar
 
 #### OpenRouter
+
 - [OpenRouter](https://openrouter.ai) hesabı oluşturun
 - API anahtarınızı alın
 - Çok sayıda AI modeline erişim
 
 #### Google Gemini
+
 - [Google AI Studio](https://makersuite.google.com/app/apikey) hesabı oluşturun
 - API anahtarınızı alın
 - Gemini Pro ve diğer modeller
 
 #### Özel Sağlayıcı
+
 - Kendi AI endpoint'inizi kullanın
 - OpenAI uyumlu API formatı gerekli
 
 ### 3. Model Seçimi
 
 Komut paletinden model seçin:
+
 ```
 Free AI Code Reviewer: Select Model
 ```
 
 ## 🎯 Kullanım
+
+### Sidebar UI ile Hızlı Erişim
+
+1. **Explorer** panelinde "AI Code Reviewer" bölümünü açın
+2. Yapılandırma ayarlarınızı kontrol edin
+3. "Bağlantıyı Test Et" ile kurulumu doğrulayın
+
+### İncelenen Dosyalar Görünümü
+
+1. **ActivityBar**'da "AI Code Reviewer" ikonuna tıklayın
+2. "Reviewed Files" bölümünde incelenen dosyaları görün
+3. Dosyaların altındaki problemlere tıklayarak ilgili satıra gidin
+4. Problem sayısı ve ciddiyet seviyelerini takip edin
+
+### Source Control ile Hızlı İnceleme
+
+1. **Source Control** panelini açın
+2. Commit butonunun yanındaki "Review" butonuna tıklayın
+3. Değişen dosyalar otomatik olarak incelenir
+4. Sonuçlar "Reviewed Files" görünümünde gösterilir
 
 ### Mevcut Dosyayı İnceleme
 
@@ -66,43 +102,90 @@ Free AI Code Reviewer: Select Model
 ### Değişen Dosyaları İnceleme
 
 Git ile takip edilen değişiklikleri inceleyin:
+
 ```
 Free AI Code Reviewer: Review Changed Files
 ```
 
+**Alternatif**: Source Control panelindeki "Review" butonunu kullanın
+
 ### Otomatik İnceleme
 
 Dosya kaydedildiğinde otomatik inceleme için ayarları açın:
+
 ```json
 {
-    "freeAICodeReviewer.autoReviewOnSave": true
+	"freeAICodeReviewer.autoReviewOnSave": true
 }
 ```
 
 ## 📋 Komutlar
 
-| Komut | Açıklama |
-|-------|----------|
-| `freeAICodeReviewer.setApiKey` | API anahtarı ayarlama |
-| `freeAICodeReviewer.reviewCurrentFile` | Mevcut dosyayı inceleme |
-| `freeAICodeReviewer.reviewSelectedFiles` | Seçili dosyaları inceleme |
-| `freeAICodeReviewer.reviewChangedFiles` | Değişen dosyaları inceleme |
-| `freeAICodeReviewer.clearDiagnostics` | İnceleme sonuçlarını temizleme |
-| `freeAICodeReviewer.configureProvider` | Sağlayıcı yapılandırması |
-| `freeAICodeReviewer.selectModel` | Model seçimi |
-| `freeAICodeReviewer.showStatistics` | İstatistikleri gösterme |
+### Ana Komutlar
+
+| Komut                                    | Açıklama                       |
+| ---------------------------------------- | ------------------------------ |
+| `freeAICodeReviewer.reviewCurrentFile`   | Mevcut dosyayı inceleme        |
+| `freeAICodeReviewer.reviewSelectedFiles` | Seçili dosyaları inceleme      |
+| `freeAICodeReviewer.reviewChangedFiles`  | Değişen dosyaları inceleme     |
+| `freeAICodeReviewer.clearDiagnostics`    | İnceleme sonuçlarını temizleme |
+| `freeAICodeReviewer.showStatistics`      | İstatistikleri gösterme        |
+
+### Yapılandırma Komutları (Sidebar UI Önerilir)
+
+| Komut                                    | Açıklama                       |
+| ---------------------------------------- | ------------------------------ |
+| `freeAICodeReviewer.setApiKey`           | API anahtarı ayarlama          |
+| `freeAICodeReviewer.configureProvider`   | Sağlayıcı yapılandırması       |
+| `freeAICodeReviewer.selectModel`         | Model seçimi                   |
+
+### UI Komutları (Sidebar'dan Erişilebilir)
+
+| Komut                                        | Açıklama                       |
+| -------------------------------------------- | ------------------------------ |
+| `freeAICodeReviewer.ui.selectProvider`       | Sağlayıcı seçimi               |
+| `freeAICodeReviewer.ui.selectModel`          | Model seçimi                   |
+| `freeAICodeReviewer.ui.setApiKey`            | API anahtarı ayarlama          |
+| `freeAICodeReviewer.ui.setCustomEndpoint`    | Özel endpoint ayarlama         |
+| `freeAICodeReviewer.ui.testConnection`       | Bağlantı testi                 |
+| `freeAICodeReviewer.ui.resetConfiguration`   | Yapılandırmayı sıfırlama       |
 
 ## ⚙️ Ayarlar
 
 ```json
 {
-    "freeAICodeReviewer.provider": "openrouter",
-    "freeAICodeReviewer.model": "",
-    "freeAICodeReviewer.customEndpoint": "",
-    "freeAICodeReviewer.customHeaders": {},
-    "freeAICodeReviewer.autoReviewOnSave": false
+	"freeAICodeReviewer.provider": "openrouter",
+	"freeAICodeReviewer.model": "",
+	"freeAICodeReviewer.customEndpoint": "",
+	"freeAICodeReviewer.customHeaders": {},
+	"freeAICodeReviewer.autoReviewOnSave": false
 }
 ```
+
+## 🏗️ Teknik Mimari
+
+### UI Mimarisi
+
+- **TreeView Provider**: VS Code sidebar entegrasyonu
+- **UI Command Manager**: Kullanıcı arayüzü komutları
+- **Configuration Tree**: Hiyerarşik yapılandırma görünümü
+- **Real-time Updates**: Yapılandırma değişikliklerinde otomatik yenileme
+
+### Prompt Yönetimi
+
+Eklenti, merkezi prompt yönetimi için `PromptManager` sınıfını kullanır:
+
+- **Merkezi Prompt Depolama**: Tüm AI sağlayıcıları ortak prompt'ları kullanır
+- **Sağlayıcı Özel Prompt'lar**: Gemini gibi özel gereksinimleri olan sağlayıcılar için ayrı prompt'lar
+- **Tutarlı Geri Bildirim**: Tüm sağlayıcılarda aynı JSON formatında sonuç
+- **Kolay Güncelleme**: Prompt değişiklikleri tek yerden yönetilir
+
+### Provider Mimarisi
+
+- `IAgentProvider` arayüzü ile standart yapı
+- `PromptManager` ile merkezi prompt yönetimi
+- Sağlayıcı özel konfigürasyonlar
+- Hata yönetimi ve geri bildirim standardizasyonu
 
 ## 🔧 Desteklenen Diller
 
@@ -135,14 +218,17 @@ AI şu kategorilerde geri bildirim verir:
 ## 🐛 Sorun Giderme
 
 ### API Anahtarı Hataları
+
 - API anahtarınızın doğru olduğundan emin olun
 - Sağlayıcı hesabınızda kredi bulunduğunu kontrol edin
 
 ### Model Listesi Alınamıyor
+
 - İnternet bağlantınızı kontrol edin
 - API anahtarınızın geçerli olduğundan emin olun
 
 ### İnceleme Sonuçları Görünmüyor
+
 - Problems panelini açın (`Ctrl+Shift+M`)
 - "Free AI Code Reviewer" filtresini kontrol edin
 
@@ -158,9 +244,26 @@ MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
 5. Pull Request oluşturun
 
+### Dokümantasyon Kuralları
+
+#### README.md Güncelleme Zorunluluğu
+- `project_rules.md` dosyasında yapılan her değişiklik sonrasında bu README.md dosyası da güncellenmelidir
+- Yeni özellikler, teknik gereksinimler ve mimari değişiklikler README'ye yansıtılmalıdır
+- Kullanıcı dostu dil kullanılmalı ve PRD ile tutarlılık sağlanmalıdır
+
+#### Proje Mimarisi Değişiklikleri
+- Yeni sınıflar, arayüzler veya design pattern'ler eklendiğinde `project_rules.md` güncellenmelidir
+- VS Code API kullanımında değişiklikler dokümante edilmelidir
+- Provider mimarisi ve Strategy Pattern uygulamasındaki değişiklikler belgelenmelidir
+
+#### Versiyon Kontrolü
+- Büyük özellik eklemeleri sonrasında versiyon numarası güncellenmelidir
+- Önemli değişiklikler tarih ile birlikte kayıt altına alınmalıdır
+
 ## 📞 Destek
 
 Sorularınız için:
+
 - GitHub Issues
 - [Dokümantasyon](https://github.com/your-username/vscode-free-ai-code-reviewer)
 
