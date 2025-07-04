@@ -4,7 +4,7 @@ import { PromptManager } from '../managers/PromptManager';
 import * as vscode from 'vscode';
 
 /**
- * Google Gemini AI sağlayıcısı
+ * Google Gemini AI provider
  */
 export class GeminiProvider implements IAgentProvider {
     private readonly baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
@@ -23,7 +23,7 @@ export class GeminiProvider implements IAgentProvider {
                 .map((model: any) => model.name.replace('models/', ''));
         } catch (error) {
             console.error('Gemini models fetch error:', error);
-            throw new Error('Gemini modellerini getirirken hata oluştu. API anahtarınızı kontrol edin.');
+            throw new Error('An error occurred while fetching Gemini models. Please check your API key.');
         }
     }
 
@@ -57,11 +57,9 @@ export class GeminiProvider implements IAgentProvider {
             return this.parseAIResponse(aiResponse);
         } catch (error) {
             console.error('Gemini review error:', error);
-            throw new Error('Gemini ile kod incelemesi yapılırken hata oluştu.');
+            throw new Error('An error occurred during code review with Gemini.');
         }
     }
-
-
 
     private parseAIResponse(response: string): ReviewComment[] {
         try {
@@ -70,23 +68,23 @@ export class GeminiProvider implements IAgentProvider {
                 return [];
             }
 
-            // Önce NO_COMMENT kontrolü yap
+            // Check for NO_COMMENT first
             if (response.trim() === 'NO_COMMENT') {
                 return [];
             }
 
             console.log('Raw AI response:', response);
 
-            // JSON'u temizle - daha kapsamlı temizlik
+            // Clean the JSON - more extensive cleaning
             let cleanedResponse = response
-                .replace(/```json|```/g, '') // Markdown kod bloklarını kaldır
-                .replace(/^[^{\[]*/, '') // JSON'dan önce gelen metni kaldır
-                .replace(/[^}\]]*$/, '') // JSON'dan sonra gelen metni kaldır
+                .replace(/```json|```/g, '') // Remove markdown code blocks
+                .replace(/^[^{\[]*/, '')     // Remove text before JSON
+                .replace(/[^}\]]*$/, '')     // Remove text after JSON
                 .trim();
 
             console.log('Cleaned response:', cleanedResponse);
 
-            // Eğer hala JSON bulunamazsa, JSON'u bulmaya çalış
+            // If it still doesn't look like JSON, try to extract a JSON block
             if (!cleanedResponse.startsWith('{') && !cleanedResponse.startsWith('[')) {
                 const jsonMatch = response.match(/[\{\[][\s\S]*[\}\]]/);
                 if (jsonMatch) {
@@ -94,42 +92,42 @@ export class GeminiProvider implements IAgentProvider {
                 } else {
                     console.warn('No valid JSON found in AI response:', response);
                     return [{
-                        message: 'AI yanıtında geçerli JSON formatı bulunamadı.',
+                        message: 'No valid JSON format found in AI response.',
                         line: 0,
                         severity: vscode.DiagnosticSeverity.Information
                     }];
                 }
             }
 
-            // JSON'daki kaçırılmamış tırnak işaretlerini düzelt
+            // Fix unescaped quotes inside JSON
             cleanedResponse = this.fixUnescapedQuotes(cleanedResponse);
-            
-            // Son kontrol: geçersiz karakterleri temizle
+
+            // Final check: sanitize invalid characters
             cleanedResponse = this.sanitizeJson(cleanedResponse);
 
             console.log('Final cleaned response:', cleanedResponse);
 
             const parsed = JSON.parse(cleanedResponse);
 
-            // Eğer direkt array ise
+            // If the result is an array
             if (Array.isArray(parsed)) {
                 return parsed.map((comment: any) => ({
-                    message: comment.message || 'Bilinmeyen yorum',
-                    line: Math.max(0, (comment.line || 1) - 1), // 0-indexed'e çevir
+                    message: comment.message || 'Unknown comment',
+                    line: Math.max(0, (comment.line || 1) - 1), // Convert to 0-indexed
                     column: comment.column || 0,
                     severity: this.mapSeverity(comment.severity),
                     category: comment.category
                 }));
             }
 
-            // Eğer object ise ve comments property'si varsa
+            // If it's an object with a comments property
             if (!parsed.comments || !Array.isArray(parsed.comments)) {
                 return [];
             }
 
             return parsed.comments.map((comment: any) => ({
-                message: comment.message || 'Bilinmeyen yorum',
-                line: Math.max(0, (comment.line || 1) - 1), // 0-indexed'e çevir
+                message: comment.message || 'Unknown comment',
+                line: Math.max(0, (comment.line || 1) - 1), // Convert to 0-indexed
                 column: comment.column || 0,
                 severity: this.mapSeverity(comment.severity),
                 category: comment.category
@@ -138,7 +136,7 @@ export class GeminiProvider implements IAgentProvider {
             console.error('AI response parsing error:', error);
             console.error('Original response:', response);
             return [{
-                message: 'AI yanıtı işlenirken hata oluştu. Lütfen tekrar deneyin.',
+                message: 'An error occurred while processing the AI response. Please try again.',
                 line: 0,
                 severity: vscode.DiagnosticSeverity.Information
             }];
@@ -146,15 +144,13 @@ export class GeminiProvider implements IAgentProvider {
     }
 
     /**
-     * JSON içindeki kaçırılmamış tırnak işaretlerini düzeltir
+     * Fixes unescaped quotes in the JSON message fields
      */
     private fixUnescapedQuotes(jsonString: string): string {
         try {
-            // message alanındaki kaçırılmamış tırnak işaretlerini düzelt
             return jsonString.replace(
                 /"message"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/g,
                 (match, content) => {
-                    // İçerikte kaçırılmamış tırnak işaretlerini kaçır
                     const escapedContent = content.replace(/(?<!\\)"/g, '\\"');
                     return `"message": "${escapedContent}"`;
                 }
@@ -166,19 +162,19 @@ export class GeminiProvider implements IAgentProvider {
     }
 
     /**
-     * JSON string'ini temizler ve geçersiz karakterleri kaldırır
+     * Sanitizes the JSON string by removing invalid characters
      */
     private sanitizeJson(jsonString: string): string {
         try {
-            // Kontrol karakterlerini kaldır
+            // Remove control characters
             let sanitized = jsonString.replace(/[\x00-\x1F\x7F]/g, '');
-            
-            // Trailing comma'ları kaldır
+
+            // Remove trailing commas
             sanitized = sanitized.replace(/,\s*([}\]])/g, '$1');
-            
-            // Çift virgülleri tek virgüle çevir
+
+            // Replace double commas with single comma
             sanitized = sanitized.replace(/,,+/g, ',');
-            
+
             return sanitized;
         } catch (error) {
             console.warn('JSON sanitization failed, returning original:', error);

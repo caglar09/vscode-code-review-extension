@@ -4,8 +4,8 @@ import { GeminiProvider } from './GeminiProvider';
 import { CustomProvider } from './CustomProvider';
 
 /**
- * AI sağlayıcıları için fabrika sınıfı
- * Strategy Pattern implementasyonu
+ * Factory class for AI providers
+ * Strategy Pattern implementation
  */
 export class ProviderFactory {
     private static providers: Map<string, () => IAgentProvider> = new Map<string, () => IAgentProvider>([
@@ -14,51 +14,51 @@ export class ProviderFactory {
     ]);
 
     /**
-     * Yapılandırmaya göre uygun sağlayıcıyı oluşturur
-     * @param config Sağlayıcı yapılandırması
-     * @returns AI sağlayıcısı instance'ı
+     * Creates the appropriate provider based on the configuration
+     * @param config Provider configuration
+     * @returns Instance of the AI provider
      */
     static createProvider(config: ProviderConfig): IAgentProvider {
         const { providerId, customEndpoint, customHeaders } = config;
 
-        // Özel sağlayıcı için
+        // For custom provider
         if (providerId === 'custom') {
             if (!customEndpoint) {
-                throw new Error('Özel sağlayıcı için endpoint gereklidir.');
+                throw new Error('Endpoint is required for custom provider.');
             }
             return new CustomProvider(customEndpoint, customHeaders || {});
         }
 
-        // Kayıtlı sağlayıcılar için
+        // For registered providers
         const providerFactory = this.providers.get(providerId);
         if (!providerFactory) {
-            throw new Error(`Desteklenmeyen sağlayıcı: ${providerId}`);
+            throw new Error(`Unsupported provider: ${providerId}`);
         }
 
         return providerFactory();
     }
 
     /**
-     * Mevcut sağlayıcıların listesini döndürür
-     * @returns Sağlayıcı ID'leri
+     * Returns a list of available provider IDs
+     * @returns Provider IDs
      */
     static getAvailableProviders(): string[] {
         return Array.from(this.providers.keys()).concat(['custom']);
     }
 
     /**
-     * Yeni bir sağlayıcı kaydeder
-     * @param providerId Sağlayıcı ID'si
-     * @param factory Sağlayıcı fabrika fonksiyonu
+     * Registers a new provider
+     * @param providerId Provider ID
+     * @param factory Provider factory function
      */
     static registerProvider(providerId: string, factory: () => IAgentProvider): void {
         this.providers.set(providerId, factory);
     }
 
     /**
-     * Sağlayıcının desteklenip desteklenmediğini kontrol eder
-     * @param providerId Sağlayıcı ID'si
-     * @returns Desteklenme durumu
+     * Checks if the provider is supported
+     * @param providerId Provider ID
+     * @returns Support status
      */
     static isProviderSupported(providerId: string): boolean {
         return this.providers.has(providerId) || providerId === 'custom';

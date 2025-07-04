@@ -4,7 +4,7 @@ import { PromptManager } from '../managers/PromptManager';
 import * as vscode from 'vscode';
 
 /**
- * OpenRouter AI sağlayıcısı
+ * OpenRouter AI provider
  */
 export class OpenRouterProvider implements IAgentProvider {
     private readonly baseUrl = 'https://openrouter.ai/api/v1';
@@ -28,7 +28,7 @@ export class OpenRouterProvider implements IAgentProvider {
             return models.map(model => model.id);
         } catch (error) {
             console.error('OpenRouter models fetch error:', error);
-            throw new Error('OpenRouter modellerini getirirken hata oluştu. API anahtarınızı kontrol edin.');
+            throw new Error('An error occurred while fetching OpenRouter models. Please check your API key.');
         }
     }
 
@@ -66,15 +66,13 @@ export class OpenRouterProvider implements IAgentProvider {
             return this.parseAIResponse(aiResponse);
         } catch (error) {
             console.error('OpenRouter review error:', error);
-            throw new Error('OpenRouter ile kod incelemesi yapılırken hata oluştu.');
+            throw new Error('An error occurred while performing code review with OpenRouter.');
         }
     }
 
-
-
     private parseAIResponse(response: string): ReviewComment[] {
         try {
-            // JSON'u temizle ve parse et
+            // Clean and parse the JSON
             const cleanedResponse = response.replace(/```json|```/g, '').trim();
             const parsed = JSON.parse(cleanedResponse);
 
@@ -83,8 +81,8 @@ export class OpenRouterProvider implements IAgentProvider {
             }
 
             return parsed.comments.map((comment: any) => ({
-                message: comment.message || 'Bilinmeyen yorum',
-                line: Math.max(0, (comment.line || 1) - 1), // 0-indexed'e çevir
+                message: comment.message || 'Unknown comment',
+                line: Math.max(0, (comment.line || 1) - 1), // Convert to 0-indexed
                 column: comment.column || 0,
                 severity: this.mapSeverity(comment.severity),
                 category: comment.category
@@ -92,7 +90,7 @@ export class OpenRouterProvider implements IAgentProvider {
         } catch (error) {
             console.error('AI response parsing error:', error);
             return [{
-                message: 'AI yanıtı işlenirken hata oluştu.',
+                message: 'An error occurred while processing the AI response.',
                 line: 0,
                 severity: vscode.DiagnosticSeverity.Information
             }];

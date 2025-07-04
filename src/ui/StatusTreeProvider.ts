@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 
 /**
- * Durum bilgisi öğe türleri
+ * Status item types
  */
 export enum StatusItemType {
     Provider = 'provider',
@@ -12,7 +12,7 @@ export enum StatusItemType {
 }
 
 /**
- * Durum bilgisi öğesi
+ * Status item
  */
 export class StatusItem extends vscode.TreeItem {
     constructor(
@@ -29,7 +29,7 @@ export class StatusItem extends vscode.TreeItem {
     }
 
     /**
-     * Öğe türüne göre ikon döndürür
+     * Returns icon based on item type
      */
     private getIcon(): vscode.ThemeIcon {
         switch (this.type) {
@@ -46,35 +46,35 @@ export class StatusItem extends vscode.TreeItem {
 }
 
 /**
- * Durum bilgisi ağaç sağlayıcısı
+ * Status tree provider
  */
 export class StatusTreeProvider implements vscode.TreeDataProvider<StatusItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<StatusItem | undefined | null | void> = new vscode.EventEmitter<StatusItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<StatusItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
     constructor() {
-        // Yapılandırma değişikliklerini dinle
+        // Listen for configuration changes
         ConfigurationManager.onConfigurationChanged(() => {
             this.refresh();
         });
     }
 
     /**
-     * Ağacı yeniler
+     * Refreshes the tree
      */
     refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 
     /**
-     * Ağaç öğesini döndürür
+     * Returns tree item
      */
     getTreeItem(element: StatusItem): vscode.TreeItem {
         return element;
     }
 
     /**
-     * Alt öğeleri döndürür
+     * Returns child elements
      */
     getChildren(element?: StatusItem): Thenable<StatusItem[]> {
         if (!element) {
@@ -84,23 +84,23 @@ export class StatusTreeProvider implements vscode.TreeDataProvider<StatusItem> {
     }
 
     /**
-     * Durum bilgisi öğelerini oluşturur
+     * Creates status items
      */
     private getStatusItems(): StatusItem[] {
         const config = ConfigurationManager.getProviderConfig();
         const items: StatusItem[] = [];
 
-        // Sağlayıcı durumu
-        const providerStatus = config.providerId ? `✓ ${config.providerId}` : '✗ Seçilmemiş';
+        // Provider status
+        const providerStatus = config.providerId ? `✓ ${config.providerId}` : '✗ Not Selected';
         items.push(new StatusItem(
-            `Sağlayıcı: ${providerStatus}`,
+            `Provider: ${providerStatus}`,
             StatusItemType.Provider,
             vscode.TreeItemCollapsibleState.None,
             config.providerId
         ));
 
-        // Model durumu
-        const modelStatus = config.model ? `✓ ${config.model}` : '✗ Seçilmemiş';
+        // Model status
+        const modelStatus = config.model ? `✓ ${config.model}` : '✗ Not Selected';
         items.push(new StatusItem(
             `Model: ${modelStatus}`,
             StatusItemType.Model,
@@ -108,25 +108,25 @@ export class StatusTreeProvider implements vscode.TreeDataProvider<StatusItem> {
             config.model
         ));
 
-        // API Anahtarı durumu
+        // API Key status
         const hasApiKey = !!config.apiKey;
         items.push(new StatusItem(
-            `API Anahtarı: ${hasApiKey ? '✓ Ayarlanmış' : '✗ Ayarlanmamış'}`,
+            `API Key: ${hasApiKey ? '✓ Set' : '✗ Not Set'}`,
             StatusItemType.ApiKey,
             vscode.TreeItemCollapsibleState.None,
             hasApiKey ? 'set' : ''
         ));
 
-        // Özel Prompt girişi
+        // Custom Prompt entry
         const customPrompt = ConfigurationManager.getCustomPrompt();
         items.push(new StatusItem(
-            `Özel Prompt ${customPrompt ? '(Ayarlanmış)' : '(Ayarlanmamış)'}`,
+            `Custom Prompt ${customPrompt ? '(Set)' : '(Not Set)'}`,
             StatusItemType.CustomPrompt,
             vscode.TreeItemCollapsibleState.None,
             customPrompt,
             {
                 command: 'freeAICodeReviewer.ui.editCustomPrompt',
-                title: 'Özel Prompt Düzenle',
+                title: 'Edit Custom Prompt',
                 arguments: []
             }
         ));

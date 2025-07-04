@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ReviewComment } from '../types';
 
 /**
- * VS Code tanılamalarını yöneten sınıf
+ * Class that manages VS Code diagnostics
  */
 export class DiagnosticsManager {
     private diagnosticCollection: vscode.DiagnosticCollection;
@@ -13,8 +13,8 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Singleton instance'ını getirir
-     * @returns DiagnosticsManager instance'ı
+     * Returns the singleton instance
+     * @returns DiagnosticsManager instance
      */
     static getInstance(): DiagnosticsManager {
         if (!DiagnosticsManager.instance) {
@@ -24,9 +24,9 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Dosya için AI inceleme yorumlarını tanılama olarak ekler
-     * @param uri Dosya URI'si
-     * @param comments İnceleme yorumları
+     * Adds AI review comments as diagnostics for a file
+     * @param uri File URI
+     * @param comments Review comments
      */
     setDiagnostics(uri: vscode.Uri, comments: ReviewComment[]): void {
         const diagnostics: vscode.Diagnostic[] = comments.map(comment => {
@@ -41,11 +41,11 @@ export class DiagnosticsManager {
                 comment.severity
             );
 
-            // Kaynak ve kod bilgilerini ekle
+            // Add source and code information
             diagnostic.source = 'Free AI Code Reviewer';
             diagnostic.code = comment.category || 'ai-review';
 
-            // Etiketler ekle
+            // Add diagnostic tags
             diagnostic.tags = this.getDiagnosticTags(comment);
 
             return diagnostic;
@@ -55,32 +55,32 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Belirli bir dosyanın tanılamalarını temizler
-     * @param uri Dosya URI'si
+     * Clears diagnostics for a specific file
+     * @param uri File URI
      */
     clearDiagnostics(uri: vscode.Uri): void {
         this.diagnosticCollection.delete(uri);
     }
 
     /**
-     * Tüm tanılamaları temizler
+     * Clears all diagnostics
      */
     clearAllDiagnostics(): void {
         this.diagnosticCollection.clear();
     }
 
     /**
-     * Belirli bir dosyanın tanılamalarını getirir
-     * @param uri Dosya URI'si
-     * @returns Tanılama listesi
+     * Gets diagnostics for a specific file
+     * @param uri File URI
+     * @returns List of diagnostics
      */
     getDiagnostics(uri: vscode.Uri): readonly vscode.Diagnostic[] {
         return this.diagnosticCollection.get(uri) || [];
     }
 
     /**
-     * Tüm dosyaların tanılamalarını getirir
-     * @returns Dosya URI'si ve tanılama çiftleri
+     * Gets diagnostics for all files
+     * @returns List of [file URI, diagnostics] pairs
      */
     getAllDiagnostics(): [vscode.Uri, vscode.Diagnostic[]][] {
         const result: [vscode.Uri, vscode.Diagnostic[]][] = [];
@@ -91,9 +91,9 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Tanılama sayısını getirir
-     * @param severity Belirli bir önem derecesi (opsiyonel)
-     * @returns Tanılama sayısı
+     * Gets the number of diagnostics
+     * @param severity Optional severity filter
+     * @returns Number of diagnostics
      */
     getDiagnosticsCount(severity?: vscode.DiagnosticSeverity): number {
         let count = 0;
@@ -108,21 +108,21 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Tanılama koleksiyonunu dispose eder
+     * Disposes the diagnostic collection
      */
     dispose(): void {
         this.diagnosticCollection.dispose();
     }
 
     /**
-     * İnceleme yorumuna göre tanılama etiketlerini belirler
-     * @param comment İnceleme yorumu
-     * @returns Tanılama etiketleri
+     * Determines diagnostic tags based on the review comment
+     * @param comment Review comment
+     * @returns List of diagnostic tags
      */
     private getDiagnosticTags(comment: ReviewComment): vscode.DiagnosticTag[] {
         const tags: vscode.DiagnosticTag[] = [];
 
-        // Kategori bazında etiketler
+        // Tags based on category
         if (comment.category) {
             const category = comment.category.toLowerCase();
 
@@ -135,7 +135,7 @@ export class DiagnosticsManager {
             }
         }
 
-        // Mesaj içeriği bazında etiketler
+        // Tags based on message content
         const message = comment.message.toLowerCase();
 
         if (message.includes('deprecated') || message.includes('kullanımdan kaldırıl')) {
@@ -151,18 +151,18 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Tanılama koleksiyonunu getirir (dış kullanım için)
-     * @returns Tanılama koleksiyonu
+     * Returns the diagnostic collection (for external use)
+     * @returns Diagnostic collection
      */
     getCollection(): vscode.DiagnosticCollection {
         return this.diagnosticCollection;
     }
 
     /**
-     * Belirli bir satırdaki tanılamaları getirir
-     * @param uri Dosya URI'si
-     * @param line Satır numarası
-     * @returns O satırdaki tanılamalar
+     * Gets diagnostics at a specific line
+     * @param uri File URI
+     * @param line Line number
+     * @returns List of diagnostics at the given line
      */
     getDiagnosticsAtLine(uri: vscode.Uri, line: number): vscode.Diagnostic[] {
         const diagnostics = this.getDiagnostics(uri);
@@ -172,8 +172,8 @@ export class DiagnosticsManager {
     }
 
     /**
-     * Tanılama istatistiklerini getirir
-     * @returns İstatistik objesi
+     * Returns diagnostic statistics
+     * @returns Stats object
      */
     getStatistics(): {
         totalFiles: number;

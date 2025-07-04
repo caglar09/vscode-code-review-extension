@@ -5,7 +5,7 @@ import { ProviderFactory } from '../providers/ProviderFactory';
 import { ProviderConfig } from '../types';
 
 /**
- * Eklenti komutlarını yöneten sınıf
+ * Class that manages extension commands
  */
 export class CommandManager {
     private codeReviewManager: CodeReviewManager;
@@ -15,66 +15,66 @@ export class CommandManager {
     }
 
     /**
-     * Tüm komutları kaydeder
-     * @param context Eklenti bağlamı
+     * Registers all commands
+     * @param context Extension context
      */
     registerCommands(context: vscode.ExtensionContext): void {
-        // API anahtarı ayarlama komutu
+        // Command to set API key
         const setApiKeyCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.setApiKey',
             () => this.setApiKey()
         );
 
-        // Mevcut dosyayı inceleme komutu
+        // Command to review current file
         const reviewCurrentFileCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.reviewCurrentFile',
             () => this.reviewCurrentFile()
         );
 
-        // Seçili dosyaları inceleme komutu
+        // Command to review selected files
         const reviewSelectedFilesCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.reviewSelectedFiles',
             (uri: vscode.Uri, uris: vscode.Uri[]) => this.reviewSelectedFiles(uri, uris)
         );
 
-        // Değişen dosyaları inceleme komutu
+        // Command to review changed files
         const reviewChangedFilesCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.reviewChangedFiles',
             () => this.reviewChangedFiles()
         );
 
-        // Sonuçları temizleme komutu
+        // Command to clear diagnostics
         const clearDiagnosticsCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.clearDiagnostics',
             () => this.clearDiagnostics()
         );
 
-        // Sağlayıcı yapılandırma komutu
+        // Command to configure provider
         const configureProviderCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.configureProvider',
             () => this.configureProvider()
         );
 
-        // Model seçme komutu
+        // Command to select model
         const selectModelCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.selectModel',
             () => this.selectModel()
         );
 
-        // İstatistikleri gösterme komutu
+        // Command to show statistics
         const showStatisticsCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.showStatistics',
             () => this.showStatistics()
         );
 
-        // UI komutları UICommandManager'da kayıtlı olduğu için burada kaldırıldı
+        // UI commands are registered in UICommandManager, so they are removed from here
 
         const clearReviewResultsCommand = vscode.commands.registerCommand(
             'freeAICodeReviewer.clearReviewResults',
             () => this.clearDiagnostics()
         );
 
-        // Komutları context'e ekle
+        // Add commands to the context
         context.subscriptions.push(
             setApiKeyCommand,
             reviewCurrentFileCommand,
@@ -89,19 +89,19 @@ export class CommandManager {
     }
 
     /**
-     * API anahtarı ayarlama komutu
+     * Command to set the API key
      */
     private async setApiKey(): Promise<void> {
         try {
             const config = ConfigurationManager.getProviderConfig();
             const providers = ProviderFactory.getAvailableProviders();
 
-            // Sağlayıcı seçimi
+            // Provider selection
             const selectedProvider = await vscode.window.showQuickPick(
                 providers.map(p => ({ label: p, value: p })),
                 {
-                    placeHolder: 'AI sağlayıcısını seçin',
-                    title: 'Sağlayıcı Seçimi'
+                    placeHolder: 'Select AI provider',
+                    title: 'Provider Selection'
                 }
             );
 
@@ -109,13 +109,13 @@ export class CommandManager {
                 return;
             }
 
-            // API anahtarı girişi
+            // API key input
             const apiKey = await vscode.window.showInputBox({
-                prompt: `${selectedProvider.value} için API anahtarınızı girin`,
+                prompt: `Enter your API key for ${selectedProvider.value}`,
                 password: true,
                 validateInput: (value) => {
                     if (!value || value.trim().length === 0) {
-                        return 'API anahtarı boş olamaz';
+                        return 'API key cannot be empty';
                     }
                     return null;
                 }
@@ -125,17 +125,17 @@ export class CommandManager {
                 return;
             }
 
-            // Özel sağlayıcı için ek bilgiler
+            // Additional information for custom provider
             let customEndpoint = '';
             let customHeaders: Record<string, string> = {};
 
             if (selectedProvider.value === 'custom') {
                 customEndpoint = await vscode.window.showInputBox({
-                    prompt: 'API endpoint URL\'sini girin',
+                    prompt: 'Enter the API endpoint URL',
                     placeHolder: 'https://api.example.com/v1/chat/completions',
                     validateInput: (value) => {
                         if (!value || !value.startsWith('http')) {
-                            return 'Geçerli bir URL girin';
+                            return 'Enter a valid URL';
                         }
                         return null;
                     }
@@ -145,9 +145,9 @@ export class CommandManager {
                     return;
                 }
 
-                // Özel başlıklar (opsiyonel)
+                // Custom headers (optional)
                 const headersInput = await vscode.window.showInputBox({
-                    prompt: 'Özel başlıklar (JSON formatında, opsiyonel)',
+                    prompt: 'Custom headers (in JSON format, optional)',
                     placeHolder: '{"X-Custom-Header": "value"}'
                 });
 
@@ -155,13 +155,13 @@ export class CommandManager {
                     try {
                         customHeaders = JSON.parse(headersInput);
                     } catch (error) {
-                        vscode.window.showErrorMessage('Geçersiz JSON formatı');
+                        vscode.window.showErrorMessage('Invalid JSON format');
                         return;
                     }
                 }
             }
 
-            // Yapılandırmayı güncelle
+            // Update configuration
             await ConfigurationManager.updateProviderConfig({
                 providerId: selectedProvider.value,
                 apiKey,
@@ -170,21 +170,21 @@ export class CommandManager {
             });
 
             vscode.window.showInformationMessage(
-                `${selectedProvider.value} sağlayıcısı için API anahtarı başarıyla ayarlandı.`
+                `API key for ${selectedProvider.value} provider has been set successfully.`
             );
 
         } catch (error) {
-            vscode.window.showErrorMessage(`API anahtarı ayarlanırken hata: ${error}`);
+            vscode.window.showErrorMessage(`Error setting API key: ${error}`);
         }
     }
 
     /**
-     * Mevcut dosyayı inceleme komutu
+     * Command to review the current file
      */
     private async reviewCurrentFile(): Promise<void> {
         const activeEditor = vscode.window.activeTextEditor;
         if (!activeEditor) {
-            vscode.window.showWarningMessage('Aktif bir dosya bulunamadı.');
+            vscode.window.showWarningMessage('No active file found.');
             return;
         }
 
@@ -192,7 +192,7 @@ export class CommandManager {
     }
 
     /**
-     * Seçili dosyaları inceleme komutu
+     * Command to review selected files
      */
     private async reviewSelectedFiles(uri: vscode.Uri, uris: vscode.Uri[]): Promise<void> {
         const filesToReview = uris && uris.length > 0 ? uris : [uri];
@@ -200,76 +200,76 @@ export class CommandManager {
     }
 
     /**
-     * Değişen dosyaları inceleme komutu
+     * Command to review changed files
      */
     private async reviewChangedFiles(): Promise<void> {
         await this.codeReviewManager.reviewChangedFiles();
     }
 
     /**
-     * Tanılamaları temizleme komutu
+     * Command to clear diagnostics
      */
     private clearDiagnostics(): void {
         this.codeReviewManager.clearAllReviews();
     }
 
     /**
-     * Sağlayıcı yapılandırma komutu
+     * Command to configure the provider
      */
     private async configureProvider(): Promise<void> {
         try {
-            console.log('configureProvider başlatıldı');
+            console.log('configureProvider started');
             
             const providers = ProviderFactory.getAvailableProviders();
-            console.log('Mevcut sağlayıcılar:', providers);
+            console.log('Available providers:', providers);
             
             const currentConfig = ConfigurationManager.getProviderConfig();
-            console.log('Mevcut yapılandırma:', currentConfig);
+            console.log('Current configuration:', currentConfig);
 
             const selectedProvider = await vscode.window.showQuickPick(
                 providers.map(p => ({
                     label: p,
-                    description: p === currentConfig.providerId ? '(Mevcut)' : '',
+                    description: p === currentConfig.providerId ? '(Current)' : '',
                     value: p
                 })),
                 {
-                    placeHolder: 'AI sağlayıcısını seçin',
-                    title: 'Sağlayıcı Yapılandırması'
+                    placeHolder: 'Select AI provider',
+                    title: 'Provider Configuration'
                 }
             );
 
             if (!selectedProvider) {
-                console.log('Kullanıcı sağlayıcı seçmedi');
+                console.log('User did not select a provider');
                 return;
             }
 
-            console.log('Seçilen sağlayıcı:', selectedProvider.value);
+            console.log('Selected provider:', selectedProvider.value);
             
             await ConfigurationManager.updateProviderConfig({
                 providerId: selectedProvider.value
             });
 
             vscode.window.showInformationMessage(
-                `Sağlayıcı ${selectedProvider.value} olarak ayarlandı. Model seçmeyi unutmayın.`
+                `Provider set to ${selectedProvider.value}. Do not forget to select a model.`
             );
             
-            console.log('configureProvider başarıyla tamamlandı');
+            console.log('configureProvider completed successfully');
             
         } catch (error) {
-            console.error('configureProvider hatası:', error);
-            vscode.window.showErrorMessage(`Sağlayıcı yapılandırılırken hata: ${error}`);
+            console.error('configureProvider error:', error);
+            vscode.window.showErrorMessage(`Error configuring provider: ${error}`);
         }
     }
 
     /**
-     * Model seçme komutu
+     * Command to select a model
      */
     private async selectModel(): Promise<void> {
         try {
             const models = await ConfigurationManager.getAvailableModels();
             
             if (models.length === 0) {
-                vscode.window.showWarningMessage('Kullanılabilir model bulunamadı. API anahtarınızı kontrol edin.');
+                vscode.window.showWarningMessage('No available models found. Please check your API key.');
                 return;
             }
 
@@ -277,12 +277,12 @@ export class CommandManager {
             const selectedModel = await vscode.window.showQuickPick(
                 models.map(model => ({
                     label: model,
-                    description: model === currentConfig.model ? '(Mevcut)' : '',
+                    description: model === currentConfig.model ? '(Current)' : '',
                     value: model
                 })),
                 {
-                    placeHolder: 'AI modelini seçin',
-                    title: 'Model Seçimi'
+                    placeHolder: 'Select the AI model',
+                    title: 'Model Selection'
                 }
             );
 
@@ -295,35 +295,35 @@ export class CommandManager {
             });
 
             vscode.window.showInformationMessage(
-                `Model ${selectedModel.value} olarak ayarlandı.`
+                `Model set to ${selectedModel.value}.`
             );
 
         } catch (error) {
-            vscode.window.showErrorMessage(`Model listesi alınırken hata: ${error}`);
+            vscode.window.showErrorMessage(`Error getting model list: ${error}`);
         }
     }
 
     /**
-     * İstatistikleri gösterme komutu
+     * Command to show statistics
      */
     private showStatistics(): void {
         this.codeReviewManager.showReviewStatistics();
     }
 
     /**
-     * Özel endpoint ayarlama komutu
+     * Command to set custom endpoint
      */
     private async setCustomEndpoint(): Promise<void> {
         try {
             const currentConfig = ConfigurationManager.getProviderConfig();
             
             const customEndpoint = await vscode.window.showInputBox({
-                prompt: 'API endpoint URL\'sini girin',
+                prompt: 'Enter API endpoint URL',
                 placeHolder: 'https://api.example.com/v1/chat/completions',
                 value: currentConfig.customEndpoint || '',
                 validateInput: (value) => {
                     if (!value || !value.startsWith('http')) {
-                        return 'Geçerli bir URL girin';
+                        return 'Enter a valid URL';
                     }
                     return null;
                 }
@@ -337,15 +337,15 @@ export class CommandManager {
                 customEndpoint
             });
 
-            vscode.window.showInformationMessage('Özel endpoint başarıyla ayarlandı.');
+            vscode.window.showInformationMessage('Custom endpoint set successfully.');
 
         } catch (error) {
-            vscode.window.showErrorMessage(`Endpoint ayarlanırken hata: ${error}`);
+            vscode.window.showErrorMessage(`Error setting endpoint: ${error}`);
         }
     }
 
     /**
-     * Paralel inceleme sayısını ayarlama komutu
+     * Command to set parallel review count
      */
     private async setParallelReviewCount(): Promise<void> {
         try {
@@ -354,15 +354,15 @@ export class CommandManager {
             const countOptions = [];
             for (let i = 1; i <= 10; i++) {
                 countOptions.push({
-                    label: `${i} dosya`,
-                    description: i === currentCount ? '(Mevcut)' : '',
+                    label: `${i} files`,
+                    description: i === currentCount ? '(Current)' : '',
                     value: i
                 });
             }
 
             const selectedCount = await vscode.window.showQuickPick(countOptions, {
-                placeHolder: 'Paralel inceleme sayısını seçin',
-                title: 'Paralel İnceleme Sayısı'
+                placeHolder: 'Select parallel review count',
+                title: 'Parallel Review Count'
             });
 
             if (!selectedCount) {
@@ -372,60 +372,60 @@ export class CommandManager {
             await ConfigurationManager.updateParallelReviewCount(selectedCount.value);
 
             vscode.window.showInformationMessage(
-                `Paralel inceleme sayısı ${selectedCount.value} olarak ayarlandı.`
+                `Parallel review count set to ${selectedCount.value}.`
             );
 
         } catch (error) {
-            vscode.window.showErrorMessage(`Paralel inceleme sayısı ayarlanırken hata: ${error}`);
+            vscode.window.showErrorMessage(`Error setting parallel review count: ${error}`);
         }
     }
 
     /**
-     * Bağlantı testi komutu
+     * Command to test connection
      */
     private async testConnection(): Promise<void> {
         try {
             const config = ConfigurationManager.getProviderConfig();
             
             if (!config.providerId || !config.apiKey || !config.model) {
-                vscode.window.showWarningMessage('Önce sağlayıcı, API anahtarı ve model ayarlarını yapın.');
+                vscode.window.showWarningMessage('Please configure provider, API key and model settings first.');
                 return;
             }
 
-            vscode.window.showInformationMessage('Bağlantı test ediliyor...');
+            vscode.window.showInformationMessage('Testing connection...');
 
-            // Basit bir test isteği gönder
+            // Send a simple test request
             const provider = ProviderFactory.createProvider(config);
-            await provider.performReview(config.apiKey, config.model, '// Test kodu\nconsole.log("test");', 'javascript');
+            await provider.performReview(config.apiKey, config.model, '// Test code\nconsole.log("test");', 'javascript');
 
-            vscode.window.showInformationMessage('Bağlantı başarılı!');
+            vscode.window.showInformationMessage('Connection successful!');
 
         } catch (error) {
-            vscode.window.showErrorMessage(`Bağlantı testi başarısız: ${error}`);
+            vscode.window.showErrorMessage(`Connection test failed: ${error}`);
         }
     }
 
     /**
-     * Yapılandırmayı sıfırlama komutu
+     * Command to reset configuration
      */
     private async resetConfiguration(): Promise<void> {
         try {
             const confirmation = await vscode.window.showWarningMessage(
-                'Tüm yapılandırma ayarları sıfırlanacak. Devam etmek istiyor musunuz?',
+                'All configuration settings will be reset. Do you want to continue?',
                 { modal: true },
-                'Evet',
-                'Hayır'
+                'Yes',
+                'No'
             );
 
-            if (confirmation !== 'Evet') {
+            if (confirmation !== 'Yes') {
                 return;
             }
 
             await ConfigurationManager.resetToDefaults();
-            vscode.window.showInformationMessage('Yapılandırma başarıyla sıfırlandı.');
+            vscode.window.showInformationMessage('Configuration reset successfully.');
 
         } catch (error) {
-            vscode.window.showErrorMessage(`Yapılandırma sıfırlanırken hata: ${error}`);
+            vscode.window.showErrorMessage(`Error resetting configuration: ${error}`);
         }
     }
 }

@@ -3,7 +3,7 @@ import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { ProviderFactory } from '../providers/ProviderFactory';
 
 /**
- * Yapılandırma ağacı öğesi türleri
+ * Configuration tree item types
  */
 export enum ConfigItemType {
     Provider = 'provider',
@@ -19,7 +19,7 @@ export enum ConfigItemType {
 }
 
 /**
- * Yapılandırma ağacı öğesi
+ * Configuration tree item
  */
 export class ConfigurationItem extends vscode.TreeItem {
     constructor(
@@ -38,17 +38,17 @@ export class ConfigurationItem extends vscode.TreeItem {
     private getTooltip(): string {
         switch (this.type) {
             case ConfigItemType.Provider:
-                return `Mevcut AI sağlayıcısı: ${this.value || 'Seçilmemiş'}`;
+                return `Current AI provider: ${this.value || 'Not Selected'}`;
             case ConfigItemType.Model:
-                return `Mevcut model: ${this.value || 'Seçilmemiş'}`;
+                return `Current model: ${this.value || 'Not Selected'}`;
             case ConfigItemType.ApiKey:
-                return this.value ? 'API anahtarı ayarlanmış' : 'API anahtarı ayarlanmamış';
+                return this.value ? 'API key is set' : 'API key is not set';
             case ConfigItemType.CustomEndpoint:
-                return `Özel endpoint: ${this.value || 'Ayarlanmamış'}`;
+                return `Custom endpoint: ${this.value || 'Not Set'}`;
             case ConfigItemType.ParallelReviewCount:
-                return `Paralel inceleme sayısı: ${this.value || '3'} dosya`;
+                return `Parallel review count: ${this.value || '3'} files`;
             case ConfigItemType.CustomPrompt:
-                return `Özel prompt: ${this.value || 'Ayarlanmamış'}`;
+                return `Custom prompt: ${this.value || 'Not Set'}`;
             default:
                 return this.label;
         }
@@ -83,35 +83,35 @@ export class ConfigurationItem extends vscode.TreeItem {
 }
 
 /**
- * VS Code TreeView için yapılandırma sağlayıcısı
+ * Configuration provider for VS Code TreeView
  */
 export class ConfigurationTreeProvider implements vscode.TreeDataProvider<ConfigurationItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<ConfigurationItem | undefined | null | void> = new vscode.EventEmitter<ConfigurationItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<ConfigurationItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
     constructor() {
-        // Yapılandırma değişikliklerini dinle
+        // Listen for configuration changes
         ConfigurationManager.onConfigurationChanged(() => {
             this.refresh();
         });
     }
 
     /**
-     * Ağacı yeniler
+     * Refreshes the tree
      */
     refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 
     /**
-     * Ağaç öğesini getirir
+     * Gets tree item
      */
     getTreeItem(element: ConfigurationItem): vscode.TreeItem {
         return element;
     }
 
     /**
-     * Alt öğeleri getirir
+     * Gets children
      */
     getChildren(element?: ConfigurationItem): Thenable<ConfigurationItem[]> {
         if (!element) {
@@ -121,23 +121,23 @@ export class ConfigurationTreeProvider implements vscode.TreeDataProvider<Config
     }
 
     /**
-     * Kök öğeleri oluşturur
+     * Creates root items
      */
     private getRootItems(): ConfigurationItem[] {
         const items: ConfigurationItem[] = [];
 
-        // Configuration öğeleri
+        // Configuration items
         items.push(...this.getConfigurationItems());
 
-        // Ayarlar Butonu
+        // Settings Button
         items.push(new ConfigurationItem(
-            'Ayarları Aç',
+            'Open Settings',
             ConfigItemType.Settings,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.ui.openSettings',
-                title: 'Ayarları Aç',
+                title: 'Open Settings',
                 arguments: []
             }
         ));
@@ -146,21 +146,21 @@ export class ConfigurationTreeProvider implements vscode.TreeDataProvider<Config
     }
 
     /**
-     * Yapılandırma öğelerini oluşturur
+     * Creates configuration items
      */
     private getConfigurationItems(): ConfigurationItem[] {
         const items: ConfigurationItem[] = [];
         const customPrompt = ConfigurationManager.getCustomPrompt();
 
-        // Özel Prompt girişi
+        // Custom Prompt entry
         items.push(new ConfigurationItem(
-            `Özel Prompt ${customPrompt ? '(Ayarlanmış)' : '(Ayarlanmamış)'}`,
+            `Custom Prompt ${customPrompt ? '(Set)' : '(Not Set)'}`,
             ConfigItemType.CustomPrompt,
             vscode.TreeItemCollapsibleState.None,
             customPrompt,
             {
                 command: 'freeAICodeReviewer.ui.editCustomPrompt',
-                title: 'Özel Prompt Düzenle',
+                title: 'Edit Custom Prompt',
                 arguments: []
             }
         ));
@@ -169,72 +169,72 @@ export class ConfigurationTreeProvider implements vscode.TreeDataProvider<Config
     }
 
     /**
-     * Hızlı eylem öğelerini oluşturur
+     * Creates quick action items
      */
     private getQuickActionItems(): ConfigurationItem[] {
         const items: ConfigurationItem[] = [];
 
-        // Değişen dosyaları incele
+        // Review changed files
         items.push(new ConfigurationItem(
-            '📝 Değişen Dosyaları İncele',
+            '📝 Review Changed Files',
             ConfigItemType.Actions,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.reviewChangedFiles',
-                title: 'Değişen Dosyaları İncele',
+                title: 'Review Changed Files',
                 arguments: []
             }
         ));
 
-        // Mevcut dosyayı incele
+        // Review current file
         items.push(new ConfigurationItem(
-            '📄 Mevcut Dosyayı İncele',
+            '📄 Review Current File',
             ConfigItemType.Actions,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.reviewCurrentFile',
-                title: 'Mevcut Dosyayı İncele',
+                title: 'Review Current File',
                 arguments: []
             }
         ));
 
-        // Seçili dosyaları incele
+        // Review selected files
         items.push(new ConfigurationItem(
-            '📁 Seçili Dosyaları İncele',
+            '📁 Review Selected Files',
             ConfigItemType.Actions,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.reviewSelectedFiles',
-                title: 'Seçili Dosyaları İncele',
+                title: 'Review Selected Files',
                 arguments: []
             }
         ));
 
-        // İnceleme sonuçlarını temizle
+        // Clear review results
         items.push(new ConfigurationItem(
-            '🧹 Sonuçları Temizle',
+            '🧹 Clear Results',
             ConfigItemType.Actions,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.clearReviewResults',
-                title: 'İnceleme Sonuçlarını Temizle',
+                title: 'Clear Review Results',
                 arguments: []
             }
         ));
 
-        // İstatistikleri göster
+        // Show statistics
         items.push(new ConfigurationItem(
-            '📈 İstatistikleri Göster',
+            '📈 Show Statistics',
             ConfigItemType.Actions,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.showStatistics',
-                title: 'İstatistikleri Göster',
+                title: 'Show Statistics',
                 arguments: []
             }
         ));

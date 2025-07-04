@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- Chat bubble background -->
+  <path d="M20 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H6L8 20L10 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="currentColor" opacity="0.8"/>
+  
+  <!-- AI brain/circuit pattern -->
+  <circle cx="8" cy="8" r="1.5" fill="currentColor" opacity="0.9"/>
+  <circle cx="16" cy="8" r="1.5" fill="currentColor" opacity="0.9"/>
+  <circle cx="12" cy="12" r="1.5" fill="currentColor" opacity="0.9"/>
+  
+  <!-- Connecting lines -->
+  <path d="M8 8L12 12M16 8L12 12" stroke="currentColor" stroke-width="1" opacity="0.7"/>
+  
+  <!-- Code review checkmark -->
+  <path d="M7 13L9 15L17 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+</svg>

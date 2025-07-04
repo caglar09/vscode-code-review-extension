@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 
 /**
- * Ayarlar menüsü için seçenekler
+ * Options for settings menu
  */
 interface SettingsOption {
     label: string;
@@ -12,18 +12,18 @@ interface SettingsOption {
 }
 
 /**
- * Ayarlar menüsünü yöneten sınıf
+ * Class that manages the settings menu
  */
 export class SettingsMenu {
     /**
-     * Ayarlar menüsünü açar
+     * Opens the settings menu
      */
     public static async openSettingsMenu(): Promise<void> {
         const options = this.getSettingsOptions();
         
         const quickPick = vscode.window.createQuickPick<SettingsOption>();
-        quickPick.title = '⚙️ AI Code Reviewer Ayarları';
-        quickPick.placeholder = 'Bir ayar seçin...';
+        quickPick.title = '⚙️ AI Code Reviewer Settings';
+        quickPick.placeholder = 'Select a setting...';
         quickPick.items = options;
         quickPick.matchOnDescription = true;
         
@@ -39,75 +39,75 @@ export class SettingsMenu {
     }
     
     /**
-     * Ayar seçeneklerini döndürür
+     * Returns setting options
      */
     private static getSettingsOptions(): SettingsOption[] {
         const config = ConfigurationManager.getProviderConfig();
         
         const options: SettingsOption[] = [
             {
-                label: '$(cloud) Sağlayıcı Seç',
-                description: `Mevcut: ${config.providerId || 'Seçilmemiş'}`,
+                label: '$(cloud) Select Provider',
+                description: `Current: ${config.providerId || 'Not Selected'}`,
                 command: 'freeAICodeReviewer.ui.selectProvider',
                 icon: 'cloud'
             },
             {
-                label: '$(gear) Model Seç',
-                description: `Mevcut: ${config.model || 'Seçilmemiş'}`,
+                label: '$(gear) Select Model',
+                description: `Current: ${config.model || 'Not Selected'}`,
                 command: 'freeAICodeReviewer.ui.selectModel',
                 icon: 'gear'
             },
             {
-                label: '$(key) API Anahtarı Ayarla',
-                description: config.apiKey ? 'Ayarlanmış' : 'Ayarlanmamış',
+                label: '$(key) Set API Key',
+                description: config.apiKey ? 'Set' : 'Not Set',
                 command: 'freeAICodeReviewer.ui.setApiKey',
                 icon: 'key'
             }
         ];
         
-        // Özel sağlayıcı için endpoint ayarı
+        // Endpoint setting for custom provider
         if (config.providerId === 'custom') {
             options.push({
-                label: '$(link) Özel Endpoint Ayarla',
-                description: config.customEndpoint || 'Ayarlanmamış',
+                label: '$(link) Set Custom Endpoint',
+                description: config.customEndpoint || 'Not Set',
                 command: 'freeAICodeReviewer.ui.setCustomEndpoint',
                 icon: 'link'
             });
         }
         
-        // Paralel inceleme sayısı
+        // Parallel review count
         const parallelCount = ConfigurationManager.getParallelReviewCount();
         options.push({
-            label: '$(list-ordered) Paralel İnceleme Sayısı',
-            description: `Mevcut: ${parallelCount} dosya`,
+            label: '$(list-ordered) Parallel Review Count',
+            description: `Current: ${parallelCount} files`,
             command: 'freeAICodeReviewer.ui.setParallelReviewCount',
             icon: 'list-ordered'
         });
         
-        // Ayırıcı
+        // Separator
         options.push({
             label: '$(dash) ────────────────────',
-            description: 'Test ve Bakım',
+            description: 'Test and Maintenance',
             command: '',
             icon: 'dash'
         });
         
-        // Test ve bakım seçenekleri
+        // Test and maintenance options
         options.push(
             {
-                label: '$(plug) Bağlantıyı Test Et',
-                description: 'API bağlantısını kontrol et',
+                label: '$(plug) Test Connection',
+                description: 'Check API connection',
                 command: 'freeAICodeReviewer.ui.testConnection',
                 icon: 'plug'
             },
             {
-                label: '$(refresh) Yapılandırmayı Sıfırla',
-                description: 'Tüm ayarları varsayılana döndür',
+                label: '$(refresh) Reset Configuration',
+                description: 'Reset all settings to default',
                 command: 'freeAICodeReviewer.ui.resetConfiguration',
                 icon: 'refresh'
             }
         );
         
-        return options.filter(option => option.command !== ''); // Ayırıcıları filtrele
+        return options.filter(option => option.command !== ''); // Filter separators
     }
 }

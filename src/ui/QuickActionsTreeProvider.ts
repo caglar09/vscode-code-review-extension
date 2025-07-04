@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 /**
- * Hızlı eylem öğe türleri
+ * Quick action item types
  */
 export enum QuickActionItemType {
     ReviewChanged = 'reviewChanged',
@@ -12,7 +12,7 @@ export enum QuickActionItemType {
 }
 
 /**
- * Hızlı eylem öğesi
+ * Quick action item
  */
 export class QuickActionItem extends vscode.TreeItem {
     constructor(
@@ -29,7 +29,7 @@ export class QuickActionItem extends vscode.TreeItem {
     }
 
     /**
-     * Öğe türüne göre ikon döndürür
+     * Returns icon based on item type
      */
     private getIcon(): vscode.ThemeIcon {
         switch (this.type) {
@@ -50,7 +50,7 @@ export class QuickActionItem extends vscode.TreeItem {
 }
 
 /**
- * Hızlı eylemler ağaç sağlayıcısı
+ * Quick actions tree provider
  */
 export class QuickActionsTreeProvider implements vscode.TreeDataProvider<QuickActionItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<QuickActionItem | undefined | null | void> = new vscode.EventEmitter<QuickActionItem | undefined | null | void>();
@@ -59,21 +59,21 @@ export class QuickActionsTreeProvider implements vscode.TreeDataProvider<QuickAc
     constructor() {}
 
     /**
-     * Ağacı yeniler
+     * Refreshes the tree
      */
     refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 
     /**
-     * Ağaç öğesini döndürür
+     * Returns tree item
      */
     getTreeItem(element: QuickActionItem): vscode.TreeItem {
         return element;
     }
 
     /**
-     * Alt öğeleri döndürür
+     * Returns child elements
      */
     getChildren(element?: QuickActionItem): Thenable<QuickActionItem[]> {
         if (!element) {
@@ -83,72 +83,72 @@ export class QuickActionsTreeProvider implements vscode.TreeDataProvider<QuickAc
     }
 
     /**
-     * Hızlı eylem öğelerini oluşturur
+     * Creates quick action items
      */
     private getQuickActionItems(): QuickActionItem[] {
         const items: QuickActionItem[] = [];
 
-        // Değişen dosyaları incele
+        // Review changed files
         items.push(new QuickActionItem(
-            'Değişen Dosyaları İncele',
+            'Review Changed Files',
             QuickActionItemType.ReviewChanged,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.reviewChangedFiles',
-                title: 'Değişen Dosyaları İncele',
+                title: 'Review Changed Files',
                 arguments: []
             }
         ));
 
-        // Mevcut dosyayı incele
+        // Review current file
         items.push(new QuickActionItem(
-            'Mevcut Dosyayı İncele',
+            'Review Current File',
             QuickActionItemType.ReviewCurrent,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.reviewCurrentFile',
-                title: 'Mevcut Dosyayı İncele',
+                title: 'Review Current File',
                 arguments: []
             }
         ));
 
-        // Seçili dosyaları incele
+        // Review selected files
         items.push(new QuickActionItem(
-            'Seçili Dosyaları İncele',
+            'Review Selected Files',
             QuickActionItemType.ReviewSelected,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.reviewSelectedFiles',
-                title: 'Seçili Dosyaları İncele',
+                title: 'Review Selected Files',
                 arguments: []
             }
         ));
 
-        // İnceleme sonuçlarını temizle
+        // Clear review results
         items.push(new QuickActionItem(
-            'Sonuçları Temizle',
+            'Clear Results',
             QuickActionItemType.ClearResults,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.clearResults',
-                title: 'İnceleme Sonuçlarını Temizle',
+                title: 'Clear Review Results',
                 arguments: []
             }
         ));
 
-        // İstatistikleri göster
+        // Show statistics
         items.push(new QuickActionItem(
-            'İstatistikleri Göster',
+            'Show Statistics',
             QuickActionItemType.ShowStatistics,
             vscode.TreeItemCollapsibleState.None,
             undefined,
             {
                 command: 'freeAICodeReviewer.showStatistics',
-                title: 'İstatistikleri Göster',
+                title: 'Show Statistics',
                 arguments: []
             }
         ));

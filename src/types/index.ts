@@ -1,26 +1,26 @@
 import * as vscode from 'vscode';
 
 /**
- * AI sağlayıcıları için temel arayüz
+ * Base interface for AI providers
  */
 export interface IAgentProvider {
     /**
-     * Sağlayıcının benzersiz kimliğini döndürür
+     * Returns the unique identifier of the provider
      */
     getProviderId(): string;
 
     /**
-     * Mevcut AI modellerinin listesini getirir
-     * @param apiKey API anahtarı
+     * Retrieves the list of available AI models
+     * @param apiKey API key
      */
     getModels(apiKey: string): Promise<string[]>;
 
     /**
-     * Kod incelemesi gerçekleştirir
-     * @param apiKey API anahtarı
-     * @param model Kullanılacak AI modeli
-     * @param diff Kod değişiklikleri
-     * @param languageId Programlama dili
+     * Performs code review
+     * @param apiKey API key
+     * @param model AI model to use
+     * @param diff Code changes
+     * @param languageId Programming language
      */
     performReview(
         apiKey: string,
@@ -31,45 +31,45 @@ export interface IAgentProvider {
 }
 
 /**
- * İnceleme yorumu
+ * Review comment
  */
 export interface ReviewComment {
-    /** Yorum metni */
+    /** Comment message */
     message: string;
-    /** Satır numarası (0-indexed) */
+    /** Line number (0-indexed) */
     line: number;
-    /** Sütun numarası (0-indexed, opsiyonel) */
+    /** Column number (0-indexed, optional) */
     column?: number;
-    /** Yorum türü */
+    /** Type of comment */
     severity: vscode.DiagnosticSeverity;
-    /** Kategori (opsiyonel) */
+    /** Category (optional) */
     category?: string;
 }
 
 /**
- * Sağlayıcı yapılandırması
+ * Provider configuration
  */
 export interface ProviderConfig {
-    /** Sağlayıcı kimliği */
+    /** Provider ID */
     providerId: string;
-    /** Seçili model */
+    /** Selected model */
     model: string;
-    /** API anahtarı */
+    /** API key */
     apiKey: string;
-    /** Özel endpoint (custom provider için) */
+    /** Custom endpoint (for custom provider) */
     customEndpoint?: string;
-    /** Özel başlıklar (custom provider için) */
+    /** Custom headers (for custom provider) */
     customHeaders?: Record<string, string>;
 }
 
 /**
- * AI model bilgisi
+ * AI model information
  */
 export interface AIModel {
-    /** Model kimliği */
+    /** Model ID */
     id: string;
-    /** Model adı */
+    /** Model name */
     name: string;
-    /** Açıklama (opsiyonel) */
+    /** Description (optional) */
     description?: string;
 }

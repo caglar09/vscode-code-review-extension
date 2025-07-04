@@ -4,7 +4,7 @@ import { PromptManager } from '../managers/PromptManager';
 import * as vscode from 'vscode';
 
 /**
- * Özel AI sağlayıcısı - kullanıcı tanımlı endpoint'ler için
+ * Custom AI provider - for user-defined endpoints
  */
 export class CustomProvider implements IAgentProvider {
     private endpoint: string;
@@ -21,7 +21,7 @@ export class CustomProvider implements IAgentProvider {
 
     async getModels(apiKey: string): Promise<string[]> {
         try {
-            // Özel endpoint'ler için model listesi almaya çalış
+            // Try to fetch the model list from the custom endpoint
             const modelsEndpoint = `${this.endpoint}/models`;
             const response = await axios.get(modelsEndpoint, {
                 headers: {
@@ -31,7 +31,7 @@ export class CustomProvider implements IAgentProvider {
                 }
             });
 
-            // Farklı API formatlarını destekle
+            // Support different API response formats
             const models = response.data.models || response.data.data || response.data;
             if (Array.isArray(models)) {
                 return models.map(model =>
@@ -39,11 +39,11 @@ export class CustomProvider implements IAgentProvider {
                 );
             }
 
-            // Eğer model listesi alınamazsa varsayılan modeller döndür
+            // If no model list is returned, fallback to default models
             return ['gpt-3.5-turbo', 'gpt-4', 'claude-3-sonnet'];
         } catch (error) {
             console.error('Custom provider models fetch error:', error);
-            // Hata durumunda varsayılan modeller döndür
+            // Return default models in case of an error
             return ['gpt-3.5-turbo', 'gpt-4', 'claude-3-sonnet'];
         }
     }
@@ -57,7 +57,7 @@ export class CustomProvider implements IAgentProvider {
         try {
             const prompt = PromptManager.createReviewPrompt(diff, languageId);
 
-            // OpenAI uyumlu format kullan
+            // Use OpenAI-compatible format
             const requestBody = {
                 model: model,
                 messages: [
@@ -82,33 +82,31 @@ export class CustomProvider implements IAgentProvider {
                 }
             });
 
-            // Farklı yanıt formatlarını destekle
+            // Support different response formats
             let aiResponse: string;
             if (response.data.choices && response.data.choices[0]) {
-                // OpenAI formatı
+                // OpenAI format
                 aiResponse = response.data.choices[0].message?.content || response.data.choices[0].text;
             } else if (response.data.content) {
-                // Direk content
+                // Direct content
                 aiResponse = response.data.content;
             } else if (response.data.response) {
                 // Response field
                 aiResponse = response.data.response;
             } else {
-                throw new Error('Beklenmeyen yanıt formatı');
+                throw new Error('Unexpected response format');
             }
 
             return this.parseAIResponse(aiResponse);
         } catch (error) {
             console.error('Custom provider review error:', error);
-            throw new Error('Özel sağlayıcı ile kod incelemesi yapılırken hata oluştu.');
+            throw new Error('An error occurred during code review with the custom provider.');
         }
     }
 
-
-
     private parseAIResponse(response: string): ReviewComment[] {
         try {
-            // JSON'u temizle ve parse et
+            // Clean and parse the JSON
             const cleanedResponse = response.replace(/```json|```/g, '').trim();
             const parsed = JSON.parse(cleanedResponse);
 
@@ -117,8 +115,8 @@ export class CustomProvider implements IAgentProvider {
             }
 
             return parsed.comments.map((comment: any) => ({
-                message: comment.message || 'Bilinmeyen yorum',
-                line: Math.max(0, (comment.line || 1) - 1), // 0-indexed'e çevir
+                message: comment.message || 'Unknown comment',
+                line: Math.max(0, (comment.line || 1) - 1), // Convert to 0-indexed
                 column: comment.column || 0,
                 severity: this.mapSeverity(comment.severity),
                 category: comment.category
@@ -126,7 +124,7 @@ export class CustomProvider implements IAgentProvider {
         } catch (error) {
             console.error('AI response parsing error:', error);
             return [{
-                message: 'AI yanıtı işlenirken hata oluştu.',
+                message: 'An error occurred while processing the AI response.',
                 line: 0,
                 severity: vscode.DiagnosticSeverity.Information
             }];

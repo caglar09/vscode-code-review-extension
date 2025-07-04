@@ -4,7 +4,7 @@
 	"description": "Free AI-powered code review extension for VS Code with OpenRouter, Gemini, and custom AI providers",
 	"version": "1.0.0",
 	"publisher": "free-ai-code-reviewer",
-	"icon": "free_ai_reviewer.png",
+	"icon": "free_ai_reviewer_buble_main.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/your-username/vscode-code-review-extension.git"
@@ -82,13 +82,13 @@
 					"minimum": 1,
 					"maximum": 10,
 					"description": "Number of files to review in parallel (1-10). Higher values may increase speed but consume more API quota.",
-					"markdownDescription": "**Paralel İnceleme Sayısı**\n\nAynı anda kaç dosyanın paralel olarak inceleneceğini belirler.\n\n- **1**: Sıralı inceleme (varsayılan eski davranış)\n- **2-5**: Orta düzey paralellik (önerilen)\n- **6-10**: Yüksek paralellik (API limitlerini aşabilir)\n\n⚠️ **Dikkat**: Yüksek değerler API kotanızı hızla tüketebilir."
+					"markdownDescription": "**Parallel Review Count**\n\nSpecifies how many files will be reviewed in parallel.\n\n- **1**: Sequential review (legacy behavior)\n- **2-5**: Moderate parallelism (recommended)\n- **6-10**: High parallelism (may exceed API limits)\n\n⚠️ **Warning**: High values may quickly consume your API quota."
 				},
 				"freeAICodeReviewer.customPrompt": {
 					"type": "string",
 					"default": "",
 					"description": "Custom prompt to add to the default review prompt. This will be appended to the standard prompt.",
-					"markdownDescription": "**Özel Prompt**\n\nVarsayılan inceleme prompt'una eklenecek özel talimatlar.\n\n**Örnekler:**\n- `Her zaman Türkçe cevap ver`\n- `Şu kurallara özellikle dikkat et: ...`\n- `Sadece güvenlik açıklarını raporla`\n\nBu metin varsayılan prompt'un sonuna eklenir."
+					"markdownDescription": "**Custom Prompt**\n\nCustom instructions to append to the default review prompt.\n\n**Examples:**\n- `Always reply in Turkish`\n- `Pay special attention to the following rules: ...`\n- `Only report security vulnerabilities`\n\nThis text is appended to the end of the default prompt."
 				}
 			}
 		},
@@ -97,7 +97,7 @@
 				{
 					"id": "freeAICodeReviewer",
 					"title": "AI Code Reviewer",
-					"icon": "$(code-review)"
+					"icon": "free_ai_reviewer_buble.svg"
 				}
 			]
 		},
@@ -127,27 +127,27 @@
 		},
 		"menus": {
 			"view/title": [
-			{
-				"command": "freeAICodeReviewer.ui.refresh",
-				"when": "view == freeAICodeReviewer.configuration",
-				"group": "navigation"
-			},
-			{
-				"command": "freeAICodeReviewer.refreshResults",
-				"when": "view == freeAICodeReviewer.reviewedFiles",
-				"group": "navigation"
-			},
-			{
-				"command": "freeAICodeReviewer.refreshStatus",
-				"when": "view == freeAICodeReviewer.status",
-				"group": "navigation"
-			},
-			{
-				"command": "freeAICodeReviewer.refreshQuickActions",
-				"when": "view == freeAICodeReviewer.quickActions",
-				"group": "navigation"
-			}
-		],
+				{
+					"command": "freeAICodeReviewer.ui.refresh",
+					"when": "view == freeAICodeReviewer.configuration",
+					"group": "navigation"
+				},
+				{
+					"command": "freeAICodeReviewer.refreshResults",
+					"when": "view == freeAICodeReviewer.reviewedFiles",
+					"group": "navigation"
+				},
+				{
+					"command": "freeAICodeReviewer.refreshStatus",
+					"when": "view == freeAICodeReviewer.status",
+					"group": "navigation"
+				},
+				{
+					"command": "freeAICodeReviewer.refreshQuickActions",
+					"when": "view == freeAICodeReviewer.quickActions",
+					"group": "navigation"
+				}
+			],
 			"view/item/context": [
 				{
 					"command": "freeAICodeReviewer.removeReviewedFile",
@@ -259,16 +259,16 @@
 			{
 				"command": "freeAICodeReviewer.reviewChangedFilesAndFocus",
 				"title": "Review",
-				"icon": "$(code-review)"
+				"icon": "$(remote-explorer-report-issues)"
 			},
 			{
 				"command": "freeAICodeReviewer.refreshStatus",
-				"title": "Durumu Yenile",
+				"title": "Refresh Status",
 				"icon": "$(refresh)"
 			},
 			{
 				"command": "freeAICodeReviewer.refreshQuickActions",
-				"title": "Hızlı Eylemleri Yenile",
+				"title": "Refresh Quick Actions",
 				"icon": "$(refresh)"
 			}
 		]

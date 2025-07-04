@@ -7,7 +7,7 @@ import { ReviewComment } from '../types';
 import { ReviewedFilesTreeProvider, ReviewIssue } from '../ReviewedFilesTreeProvider';
 
 /**
- * Kod inceleme süreçlerini yöneten ana sınıf
+ * Main class that manages code review processes
  */
 export class CodeReviewManager {
     private git: simpleGit.SimpleGit;
@@ -16,7 +16,7 @@ export class CodeReviewManager {
     private reviewedFilesProvider?: ReviewedFilesTreeProvider;
 
     constructor() {
-        // Workspace root dizinini al ve Git'i o dizinde başlat
+        // Get workspace root directory and initialize Git in that directory
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         console.log("workspaceRoot", workspaceRoot);
 
@@ -28,8 +28,8 @@ export class CodeReviewManager {
     }
 
     /**
-     * Workspace'in Git repository olup olmadığını kontrol eder
-     * @returns Git repository durumu
+     * Checks if the workspace is a Git repository
+     * @returns Git repository status
      */
     private async isGitRepository(): Promise<boolean> {
         try {
@@ -41,14 +41,14 @@ export class CodeReviewManager {
     }
 
     /**
-     * Mevcut dosyayı AI ile inceler
-     * @param document İncelenecek doküman
+     * Reviews the current file with AI
+     * @param document Document to be reviewed
      */
     async reviewCurrentFile(document: vscode.TextDocument): Promise<void> {
         try {
-            this.outputChannel.appendLine(`İnceleme başlatılıyor: ${document.fileName}`);
+            this.outputChannel.appendLine(`Starting review: ${document.fileName}`);
 
-            // Yapılandırmayı kontrol et
+            // Check configuration
             const config = ConfigurationManager.getProviderConfig();
             const validation = ConfigurationManager.validateConfig(config);
 
@@ -56,24 +56,24 @@ export class CodeReviewManager {
                 throw new Error(validation.error);
             }
 
-            // İlerleme göstergesi ile işlemi gerçekleştir
+            // Perform operation with progress indicator
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: 'AI Kod İncelemesi',
+                title: 'AI Code Review',
                 cancellable: true
             }, async (progress, token) => {
-                progress.report({ message: 'Değişiklikler alınıyor...' });
+                progress.report({ message: 'Getting changes...' });
                 
-                // Git diff'ini al
+                // Get Git diff
                 const diff = await this.getFileDiff(document.uri.fsPath);
                 if (!diff || diff.trim().length === 0) {
-                    vscode.window.showInformationMessage('Bu dosyada değişiklik bulunamadı.');
+                    vscode.window.showInformationMessage('No changes found in this file.');
                     return;
                 }
 
-                progress.report({ message: 'AI incelemesi yapılıyor...' });
+                progress.report({ message: 'AI review in progress...' });
                 
-                // AI sağlayıcısını oluştur ve inceleme yap
+                // Create AI provider and perform review
                 const provider = ProviderFactory.createProvider(config);
                 const comments = await provider.performReview(
                     config.apiKey,
@@ -82,89 +82,89 @@ export class CodeReviewManager {
                     document.languageId
                 );
 
-                progress.report({ message: 'Sonuçlar işleniyor...' });
+                progress.report({ message: 'Processing results...' });
                 
-                // Sonuçları işle
+                // Process results
                 this.procesReviewResults(document.uri, comments);
 
-                this.outputChannel.appendLine(`İnceleme tamamlandı: ${comments.length} yorum bulundu`);
+                this.outputChannel.appendLine(`Review completed: ${comments.length} comments found`);
 
                 if (comments.length > 0) {
                     vscode.window.showInformationMessage(
-                        `AI kod incelemesi tamamlandı. ${comments.length} öneri bulundu.`,
-                        'Sonuçları Göster'
+                        `AI code review completed. ${comments.length} suggestions found.`,
+                        'Show Results'
                     ).then(selection => {
-                        if (selection === 'Sonuçları Göster') {
+                        if (selection === 'Show Results') {
                             vscode.commands.executeCommand('workbench.panel.markers.view.focus');
                         }
                     });
                 } else {
-                    vscode.window.showInformationMessage('Harika! AI herhangi bir sorun bulamadı.');
+                    vscode.window.showInformationMessage('Great! AI found no issues.');
                 }
             });
 
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
-            this.outputChannel.appendLine(`Hata: ${errorMessage}`);
-            vscode.window.showErrorMessage(`Kod incelemesi sırasında hata: ${errorMessage}`);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.outputChannel.appendLine(`Error: ${errorMessage}`);
+            vscode.window.showErrorMessage(`Error during code review: ${errorMessage}`);
         }
     }
 
     /**
-     * Seçili dosyaları toplu olarak inceler
-     * @param uris İncelenecek dosya URI'leri
+     * Reviews selected files in batch
+     * @param uris File URIs to be reviewed
      */
     async reviewMultipleFiles(uris: vscode.Uri[]): Promise<void> {
         const parallelCount = ConfigurationManager.getParallelReviewCount();
         
         const progress = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: `AI Kod İncelemesi (${parallelCount} paralel)`,
+            title: `AI Code Review (${parallelCount} parallel)`,
             cancellable: true
         }, async (progress, token) => {
             const totalFiles = uris.length;
             let processedFiles = 0;
             let errorCount = 0;
 
-            // Dosyaları paralel gruplar halinde işle
+            // Process files in parallel groups
             for (let i = 0; i < uris.length; i += parallelCount) {
                 if (token.isCancellationRequested) {
                     break;
                 }
 
-                // Mevcut batch'i al
+                // Get current batch
                 const batch = uris.slice(i, i + parallelCount);
                 
-                // Batch'teki dosyaları paralel olarak işle
+                // Process files in batch in parallel
                 const batchPromises = batch.map(async (uri) => {
                     try {
                         const document = await vscode.workspace.openTextDocument(uri);
                         await this.reviewCurrentFile(document);
                         return { success: true, uri };
                     } catch (error) {
-                        this.outputChannel.appendLine(`Dosya işlenirken hata (${uri.fsPath}): ${error}`);
+                        this.outputChannel.appendLine(`Error processing file (${uri.fsPath}): ${error}`);
                         return { success: false, uri, error };
                     }
                 });
 
-                // Batch'in tamamlanmasını bekle
+                // Wait for batch completion
                 const batchResults = await Promise.all(batchPromises);
                 
-                // Sonuçları say
+                // Count results
                 const batchSuccessCount = batchResults.filter(r => r.success).length;
                 const batchErrorCount = batchResults.filter(r => !r.success).length;
                 
                 processedFiles += batchSuccessCount;
                 errorCount += batchErrorCount;
 
-                // İlerleme durumunu güncelle
+                // Update progress status
                 const completedFiles = i + batch.length;
                 progress.report({
                     increment: (batch.length / totalFiles) * 100,
-                    message: `${Math.min(completedFiles, totalFiles)}/${totalFiles} dosya işlendi (${errorCount} hata)`
+                    message: `${Math.min(completedFiles, totalFiles)}/${totalFiles} files processed (${errorCount} errors)`
                 });
 
-                // Kısa bir bekleme süresi ekle (API rate limiting için)
+                // Add short wait time (for API rate limiting)
                 if (i + parallelCount < uris.length && !token.isCancellationRequested) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
@@ -174,8 +174,8 @@ export class CodeReviewManager {
         });
 
         const message = progress.errorCount > 0 
-            ? `Toplu inceleme tamamlandı: ${progress.processedFiles} dosya başarılı, ${progress.errorCount} hata`
-            : `Toplu inceleme tamamlandı: ${progress.processedFiles} dosya işlendi.`;
+            ? `Batch review completed: ${progress.processedFiles} files successful, ${progress.errorCount} errors`
+            : `Batch review completed: ${progress.processedFiles} files processed.`;
         
         if (progress.errorCount > 0) {
             vscode.window.showWarningMessage(message);
@@ -185,18 +185,18 @@ export class CodeReviewManager {
     }
 
     /**
-     * Workspace'deki değişen dosyaları inceler
+     * Reviews changed files in workspace
      */
     async reviewChangedFiles(): Promise<void> {
         try {
-            // Git repository kontrolü
+            // Git repository check
             const isGitRepo = await this.isGitRepository();
             if (!isGitRepo) {
                 vscode.window.showErrorMessage(
-                    'Bu özellik Git repository\'si gerektirir. Lütfen workspace\'inizi Git ile başlatın (git init) veya mevcut bir Git repository\'sinde çalışın.',
-                    'Git Nasıl Başlatılır?'
-                ).then(selection => {
-                    if (selection === 'Git Nasıl Başlatılır?') {
+                'This feature requires a Git repository. Please initialize your workspace with Git (git init) or work in an existing Git repository.',
+                'How to Initialize Git?'
+            ).then(selection => {
+                    if (selection === 'How to Initialize Git?') {
                         vscode.env.openExternal(vscode.Uri.parse('https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository'));
                     }
                 });
