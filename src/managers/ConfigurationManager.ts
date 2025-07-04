@@ -34,6 +34,24 @@ export class ConfigurationManager {
     }
 
     /**
+     * Özel prompt ayarını getirir
+     * @returns Özel prompt metni
+     */
+    static getCustomPrompt(): string {
+        const config = vscode.workspace.getConfiguration(this.EXTENSION_ID);
+        return config.get<string>('customPrompt', '');
+    }
+
+    /**
+     * Özel prompt ayarını günceller
+     * @param customPrompt Yeni özel prompt metni
+     */
+    static async setCustomPrompt(customPrompt: string): Promise<void> {
+        const config = vscode.workspace.getConfiguration(this.EXTENSION_ID);
+        await config.update('customPrompt', customPrompt, vscode.ConfigurationTarget.Global);
+    }
+
+    /**
      * Sağlayıcı yapılandırmasını günceller
      * @param config Yeni yapılandırma
      */
@@ -189,6 +207,7 @@ export class ConfigurationManager {
         await config.update('customEndpoint', '', vscode.ConfigurationTarget.Global);
         await config.update('customHeaders', {}, vscode.ConfigurationTarget.Global);
         await config.update('parallelReviewCount', 3, vscode.ConfigurationTarget.Global);
+        await config.update('customPrompt', '', vscode.ConfigurationTarget.Global);
 
         // API anahtarlarını temizle
         const providers = ProviderFactory.getAvailableProviders();

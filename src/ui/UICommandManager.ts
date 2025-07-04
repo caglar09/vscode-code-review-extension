@@ -2,15 +2,22 @@ import * as vscode from 'vscode';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { ProviderFactory } from '../providers/ProviderFactory';
 import { ConfigurationTreeProvider } from './ConfigurationTreeProvider';
+import { StatusTreeProvider } from './StatusTreeProvider';
+import { QuickActionsTreeProvider } from './QuickActionsTreeProvider';
+import { SettingsMenu } from './SettingsMenu';
 
 /**
  * UI komutlarını yöneten sınıf
  */
 export class UICommandManager {
-    private treeProvider: ConfigurationTreeProvider;
+    private configTreeProvider: ConfigurationTreeProvider;
+    private statusTreeProvider?: StatusTreeProvider;
+    private quickActionsTreeProvider?: QuickActionsTreeProvider;
 
-    constructor(treeProvider: ConfigurationTreeProvider) {
-        this.treeProvider = treeProvider;
+    constructor(configTreeProvider: ConfigurationTreeProvider, statusTreeProvider?: StatusTreeProvider, quickActionsTreeProvider?: QuickActionsTreeProvider) {
+        this.configTreeProvider = configTreeProvider;
+        this.statusTreeProvider = statusTreeProvider;
+        this.quickActionsTreeProvider = quickActionsTreeProvider;
     }
 
     /**
@@ -22,9 +29,11 @@ export class UICommandManager {
             vscode.commands.registerCommand('freeAICodeReviewer.ui.selectModel', () => this.selectModel()),
             vscode.commands.registerCommand('freeAICodeReviewer.ui.setApiKey', () => this.setApiKey()),
             vscode.commands.registerCommand('freeAICodeReviewer.ui.setCustomEndpoint', () => this.setCustomEndpoint()),
+            vscode.commands.registerCommand('freeAICodeReviewer.ui.editCustomPrompt', () => this.editCustomPrompt()),
             vscode.commands.registerCommand('freeAICodeReviewer.ui.testConnection', () => this.testConnection()),
             vscode.commands.registerCommand('freeAICodeReviewer.ui.resetConfiguration', () => this.resetConfiguration()),
-            vscode.commands.registerCommand('freeAICodeReviewer.ui.refresh', () => this.treeProvider.refresh())
+            vscode.commands.registerCommand('freeAICodeReviewer.ui.refresh', () => this.refreshAllTrees()),
+            vscode.commands.registerCommand('freeAICodeReviewer.ui.openSettings', () => SettingsMenu.openSettingsMenu())
         ];
 
         context.subscriptions.push(...commands);
@@ -59,7 +68,7 @@ export class UICommandManager {
             });
 
             vscode.window.showInformationMessage(`Sağlayıcı '${selectedProvider.value}' olarak ayarlandı.`);
-            this.treeProvider.refresh();
+            this.refreshAllTrees();
 
         } catch (error) {
             vscode.window.showErrorMessage(`Sağlayıcı seçilirken hata: ${error}`);
@@ -117,7 +126,7 @@ export class UICommandManager {
                     });
 
                     vscode.window.showInformationMessage(`Model '${selectedModel.value}' olarak ayarlandı.`);
-                    this.treeProvider.refresh();
+                    this.refreshAllTrees();
 
                 } catch (error) {
                     vscode.window.showErrorMessage(`Modeller yüklenirken hata: ${error}`);
@@ -162,10 +171,36 @@ export class UICommandManager {
             });
 
             vscode.window.showInformationMessage('API anahtarı başarıyla ayarlandı.');
-            this.treeProvider.refresh();
+            this.refreshAllTrees();
 
         } catch (error) {
             vscode.window.showErrorMessage(`API anahtarı ayarlanırken hata: ${error}`);
+        }
+    }
+
+    /**
+     * Özel prompt düzenleme
+     */
+    private async editCustomPrompt(): Promise<void> {
+        try {
+            const currentPrompt = ConfigurationManager.getCustomPrompt();
+
+            const customPrompt = await vscode.window.showInputBox({
+                prompt: 'Özel prompt\'unuzu girin',
+                value: currentPrompt,
+                placeHolder: 'Kod incelemesi için özel talimatlarınızı yazın...'
+            });
+
+            if (customPrompt === undefined) {
+                return;
+            }
+
+            await ConfigurationManager.setCustomPrompt(customPrompt);
+            vscode.window.showInformationMessage('Özel prompt başarıyla ayarlandı.');
+            this.refreshAllTrees();
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Özel prompt ayarlanırken hata: ${error}`);
         }
     }
 
@@ -220,7 +255,7 @@ export class UICommandManager {
             });
 
             vscode.window.showInformationMessage('Özel endpoint başarıyla ayarlandı.');
-            this.treeProvider.refresh();
+            this.refreshAllTrees();
 
         } catch (error) {
             vscode.window.showErrorMessage(`Endpoint ayarlanırken hata: ${error}`);
@@ -284,10 +319,19 @@ export class UICommandManager {
 
             await ConfigurationManager.resetToDefaults();
             vscode.window.showInformationMessage('Yapılandırma başarıyla sıfırlandı.');
-            this.treeProvider.refresh();
+            this.refreshAllTrees();
 
         } catch (error) {
             vscode.window.showErrorMessage(`Yapılandırma sıfırlanırken hata: ${error}`);
         }
+    }
+
+    /**
+     * Tüm tree provider'ları yeniler
+     */
+    private refreshAllTrees(): void {
+        this.configTreeProvider.refresh();
+        this.statusTreeProvider?.refresh();
+        this.quickActionsTreeProvider?.refresh();
     }
 }

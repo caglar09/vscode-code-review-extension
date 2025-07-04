@@ -8,6 +8,7 @@ VS Code için ücretsiz AI destekli kod inceleme eklentisi. OpenRouter, Google G
 - **Akıllı Kod İncelemesi**: AI destekli kod kalitesi analizi
 - **Git Entegrasyonu**: Değişen dosyaları otomatik tespit
 - **Gerçek Zamanlı Geri Bildirim**: VS Code Problems panelinde sonuçlar
+- **İlerleme Göstergesi**: İnceleme sürecinin aşamalarını gösteren görsel geri bildirim
 - **Toplu İnceleme**: Birden fazla dosyayı aynı anda inceleme
 - **İncelenen Dosyalar Görünümü**: ActivityBar'da özel panel ile incelenen dosyaları takip
 - **Source Control Entegrasyonu**: Commit butonunun yanında "Review" butonu
@@ -92,6 +93,7 @@ Free AI Code Reviewer: Select Model
 1. İncelemek istediğiniz dosyayı açın
 2. Komut paletini açın (`Ctrl+Shift+P`)
 3. `Free AI Code Reviewer: Review Current File` komutunu çalıştırın
+4. İnceleme süreci boyunca ilerleme göstergesi görüntülenir (değişiklikler alınıyor, AI incelemesi yapılıyor, sonuçlar işleniyor)
 
 ### Seçili Dosyaları İnceleme
 

@@ -56,39 +56,52 @@ export class CodeReviewManager {
                 throw new Error(validation.error);
             }
 
-            // Git diff'ini al
-            const diff = await this.getFileDiff(document.uri.fsPath);
-            if (!diff || diff.trim().length === 0) {
-                vscode.window.showInformationMessage('Bu dosyada değişiklik bulunamadı.');
-                return;
-            }
+            // İlerleme göstergesi ile işlemi gerçekleştir
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'AI Kod İncelemesi',
+                cancellable: true
+            }, async (progress, token) => {
+                progress.report({ message: 'Değişiklikler alınıyor...' });
+                
+                // Git diff'ini al
+                const diff = await this.getFileDiff(document.uri.fsPath);
+                if (!diff || diff.trim().length === 0) {
+                    vscode.window.showInformationMessage('Bu dosyada değişiklik bulunamadı.');
+                    return;
+                }
 
-            // AI sağlayıcısını oluştur ve inceleme yap
-            const provider = ProviderFactory.createProvider(config);
-            const comments = await provider.performReview(
-                config.apiKey,
-                config.model,
-                diff,
-                document.languageId
-            );
+                progress.report({ message: 'AI incelemesi yapılıyor...' });
+                
+                // AI sağlayıcısını oluştur ve inceleme yap
+                const provider = ProviderFactory.createProvider(config);
+                const comments = await provider.performReview(
+                    config.apiKey,
+                    config.model,
+                    diff,
+                    document.languageId
+                );
 
-            // Sonuçları işle
-            this.procesReviewResults(document.uri, comments);
+                progress.report({ message: 'Sonuçlar işleniyor...' });
+                
+                // Sonuçları işle
+                this.procesReviewResults(document.uri, comments);
 
-            this.outputChannel.appendLine(`İnceleme tamamlandı: ${comments.length} yorum bulundu`);
+                this.outputChannel.appendLine(`İnceleme tamamlandı: ${comments.length} yorum bulundu`);
 
-            if (comments.length > 0) {
-                vscode.window.showInformationMessage(
-                    `AI kod incelemesi tamamlandı. ${comments.length} öneri bulundu.`,
-                    'Sonuçları Göster'
-                ).then(selection => {
-                    if (selection === 'Sonuçları Göster') {
-                        vscode.commands.executeCommand('workbench.panel.markers.view.focus');
-                    }
-                });
-            } else {
-                vscode.window.showInformationMessage('Harika! AI herhangi bir sorun bulamadı.');
-            }
+                if (comments.length > 0) {
+                    vscode.window.showInformationMessage(
+                        `AI kod incelemesi tamamlandı. ${comments.length} öneri bulundu.`,
+                        'Sonuçları Göster'
+                    ).then(selection => {
+                        if (selection === 'Sonuçları Göster') {
+                            vscode.commands.executeCommand('workbench.panel.markers.view.focus');
+                        }
+                    });
+                } else {
+                    vscode.window.showInformationMessage('Harika! AI herhangi bir sorun bulamadı.');
+                }
+            });
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
@@ -222,6 +235,12 @@ export class CodeReviewManager {
      */
     clearAllReviews(): void {
         this.diagnosticsManager.clearAllDiagnostics();
+        
+        // Reviewed files provider'ı da temizle
+        if (this.reviewedFilesProvider) {
+            this.reviewedFilesProvider.clearReviewedFiles();
+        }
+        
         this.outputChannel.appendLine('Tüm AI inceleme sonuçları temizlendi.');
         vscode.window.showInformationMessage('AI inceleme sonuçları temizlendi.');
     }

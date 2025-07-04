@@ -83,6 +83,12 @@
 					"maximum": 10,
 					"description": "Number of files to review in parallel (1-10). Higher values may increase speed but consume more API quota.",
 					"markdownDescription": "**Paralel İnceleme Sayısı**\n\nAynı anda kaç dosyanın paralel olarak inceleneceğini belirler.\n\n- **1**: Sıralı inceleme (varsayılan eski davranış)\n- **2-5**: Orta düzey paralellik (önerilen)\n- **6-10**: Yüksek paralellik (API limitlerini aşabilir)\n\n⚠️ **Dikkat**: Yüksek değerler API kotanızı hızla tüketebilir."
+				},
+				"freeAICodeReviewer.customPrompt": {
+					"type": "string",
+					"default": "",
+					"description": "Custom prompt to add to the default review prompt. This will be appended to the standard prompt.",
+					"markdownDescription": "**Özel Prompt**\n\nVarsayılan inceleme prompt'una eklenecek özel talimatlar.\n\n**Örnekler:**\n- `Her zaman Türkçe cevap ver`\n- `Şu kurallara özellikle dikkat et: ...`\n- `Sadece güvenlik açıklarını raporla`\n\nBu metin varsayılan prompt'un sonuna eklenir."
 				}
 			}
 		},
@@ -103,6 +109,16 @@
 					"when": "true"
 				},
 				{
+					"id": "freeAICodeReviewer.status",
+					"name": "Status",
+					"when": "true"
+				},
+				{
+					"id": "freeAICodeReviewer.quickActions",
+					"name": "Quick Actions",
+					"when": "true"
+				},
+				{
 					"id": "freeAICodeReviewer.reviewedFiles",
 					"name": "Reviewed Files",
 					"when": "true"
@@ -111,22 +127,27 @@
 		},
 		"menus": {
 			"view/title": [
-				{
-					"command": "freeAICodeReviewer.ui.refresh",
-					"when": "view == freeAICodeReviewer.configuration",
-					"group": "navigation"
-				},
-				{
-					"command": "freeAICodeReviewer.refreshReviewedFiles",
-					"when": "view == freeAICodeReviewer.reviewedFiles",
-					"group": "navigation"
-				},
-				{
-					"command": "freeAICodeReviewer.clearReviewedFiles",
-					"when": "view == freeAICodeReviewer.reviewedFiles",
-					"group": "navigation"
-				}
-			],
+			{
+				"command": "freeAICodeReviewer.ui.refresh",
+				"when": "view == freeAICodeReviewer.configuration",
+				"group": "navigation"
+			},
+			{
+				"command": "freeAICodeReviewer.refreshResults",
+				"when": "view == freeAICodeReviewer.reviewedFiles",
+				"group": "navigation"
+			},
+			{
+				"command": "freeAICodeReviewer.refreshStatus",
+				"when": "view == freeAICodeReviewer.status",
+				"group": "navigation"
+			},
+			{
+				"command": "freeAICodeReviewer.refreshQuickActions",
+				"when": "view == freeAICodeReviewer.quickActions",
+				"group": "navigation"
+			}
+		],
 			"view/item/context": [
 				{
 					"command": "freeAICodeReviewer.removeReviewedFile",
@@ -239,6 +260,16 @@
 				"command": "freeAICodeReviewer.reviewChangedFilesAndFocus",
 				"title": "Review",
 				"icon": "$(code-review)"
+			},
+			{
+				"command": "freeAICodeReviewer.refreshStatus",
+				"title": "Durumu Yenile",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "freeAICodeReviewer.refreshQuickActions",
+				"title": "Hızlı Eylemleri Yenile",
+				"icon": "$(refresh)"
 			}
 		]
 	},

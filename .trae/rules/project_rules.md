@@ -63,10 +63,13 @@ AI'dan gelen sonuçların kullanıcıya sunulma şeklini tanımlar.
 * **Kullanıcı Hikayesi 3.2 (Detaylı Açıklama):**
     * **Bir kullanıcı olarak,** vurgulanmış bir kod satırının üzerine fare ile geldiğimde, AI'dan gelen ayrıntılı yorumu içeren bir araç ipucu görmek istiyorum, **böylece** öneriyi anlayabilirim.
 
-* **Kullanıcı Hikayesi 3.3 (Durum Bildirimleri):**
+* **Kullanıcı Hikayesi 3.3 (İlerleme Göstergesi):**
+    * **Bir kullanıcı olarak,** kod incelemesi sırasında VS Code'un ilerleme göstergesi ile inceleme sürecinin aşamalarını ("Değişiklikler alınıyor...", "AI incelemesi yapılıyor...", "Sonuçlar işleniyor...") görmek istiyorum, **böylece** işlemin ne kadar süreceğini ve hangi aşamada olduğunu bilebilirim.
+
+* **Kullanıcı Hikayesi 3.4 (Durum Bildirimleri):**
     * **Bir kullanıcı olarak,** VS Code durum çubuğunda "AI İncelemesi: Devam ediyor...", "AI İncelemesi: Tamamlandı" gibi bir durum mesajı görmek istiyorum, **böylece** inceleme sürecinin mevcut durumunu bilirim.
 
-* **Kullanıcı Hikayesi 3.4 (Hata Yönetimi):**
+* **Kullanıcı Hikayesi 3.5 (Hata Yönetimi):**
     * **Bir kullanıcı olarak,** bir API çağrısı başarısız olursa, sorunu açıklayan ("Geçersiz API Anahtarı", "Ağ Hatası" gibi) net bir hata mesajı görmek istiyorum, **böylece** sorunu giderebilirim.
 
 ### 3. Teknik Gereksinimler ve Mimari
@@ -86,7 +89,7 @@ Bu bölüm, eklentinin nasıl inşa edilmesi gerektiğini tanımlar.
     * **Güvenlik:** `vscode.SecretStorage` (API anahtarları için **zorunludur**).
     * **Görsel Geri Bildirim:** `vscode.languages.createDiagnosticCollection`
     * **Bildirimler:** `vscode.window.showInformationMessage`, `vscode.window.showErrorMessage`
-    * **İlerleme Durumu:** `vscode.window.withProgress`
+    * **İlerleme Durumu:** `vscode.window.withProgress` (kod incelemesi sürecinin aşamalarını göstermek için kullanılır)
     * **Olaylar:** `vscode.workspace.onDidSaveTextDocument`
 * **Git Entegrasyonu:**
     * Değişiklikleri (diff) oluşturmak için `simple-git` gibi bir Node.js kütüphanesi kullanılmalıdır.

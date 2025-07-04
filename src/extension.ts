@@ -4,6 +4,8 @@ import { ConfigurationManager } from './managers/ConfigurationManager';
 import { DiagnosticsManager } from './managers/DiagnosticsManager';
 import { CommandManager } from './commands';
 import { ConfigurationTreeProvider } from './ui/ConfigurationTreeProvider';
+import { StatusTreeProvider } from './ui/StatusTreeProvider';
+import { QuickActionsTreeProvider } from './ui/QuickActionsTreeProvider';
 import { UICommandManager } from './ui/UICommandManager';
 import { ReviewedFilesTreeProvider } from './ReviewedFilesTreeProvider';
 
@@ -20,13 +22,25 @@ export function activate(context: vscode.ExtensionContext) {
         const commandManager = new CommandManager(codeReviewManager);
 
         // UI bileşenlerini başlat
-        const treeProvider = new ConfigurationTreeProvider();
+        const configTreeProvider = new ConfigurationTreeProvider();
+        const statusTreeProvider = new StatusTreeProvider();
+        const quickActionsTreeProvider = new QuickActionsTreeProvider();
         const reviewedFilesProvider = new ReviewedFilesTreeProvider(context);
-        const uiCommandManager = new UICommandManager(treeProvider);
+        const uiCommandManager = new UICommandManager(configTreeProvider, statusTreeProvider, quickActionsTreeProvider);
 
         // TreeView'ları kaydet
         const configTreeView = vscode.window.createTreeView('freeAICodeReviewer.configuration', {
-            treeDataProvider: treeProvider,
+            treeDataProvider: configTreeProvider,
+            showCollapseAll: false
+        });
+        
+        const statusTreeView = vscode.window.createTreeView('freeAICodeReviewer.status', {
+            treeDataProvider: statusTreeProvider,
+            showCollapseAll: false
+        });
+        
+        const quickActionsTreeView = vscode.window.createTreeView('freeAICodeReviewer.quickActions', {
+            treeDataProvider: quickActionsTreeProvider,
             showCollapseAll: false
         });
         
@@ -39,6 +53,17 @@ export function activate(context: vscode.ExtensionContext) {
         commandManager.registerCommands(context);
         uiCommandManager.registerUICommands(context);
 
+        // Ek refresh komutları
+        const refreshStatusCommand = vscode.commands.registerCommand(
+            'freeAICodeReviewer.refreshStatus',
+            () => statusTreeProvider.refresh()
+        );
+        
+        const refreshQuickActionsCommand = vscode.commands.registerCommand(
+            'freeAICodeReviewer.refreshQuickActions',
+            () => quickActionsTreeProvider.refresh()
+        );
+
         // Dosya kaydetme olayını dinle
         const onSaveListener = vscode.workspace.onDidSaveTextDocument(
             (document) => codeReviewManager.onFileSaved(document)
@@ -47,7 +72,8 @@ export function activate(context: vscode.ExtensionContext) {
         // Yapılandırma değişikliklerini dinle
         const configChangeListener = ConfigurationManager.onConfigurationChanged(() => {
             console.log('Free AI Code Reviewer yapılandırması değişti');
-            treeProvider.refresh();
+            configTreeProvider.refresh();
+            statusTreeProvider.refresh();
         });
 
         // Reviewed files komutlarını kaydet
@@ -97,6 +123,13 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             }
         );
+        
+        const clearResultsCommand = vscode.commands.registerCommand(
+            'freeAICodeReviewer.clearResults',
+            () => {
+                codeReviewManager.clearAllReviews();
+            }
+        );
 
         // Context'e ekle
         // CodeReviewManager'a reviewed files provider'ı bağla
@@ -108,12 +141,17 @@ export function activate(context: vscode.ExtensionContext) {
             codeReviewManager,
             diagnosticsManager,
             configTreeView,
+            statusTreeView,
+            quickActionsTreeView,
             reviewedFilesTreeView,
             clearReviewedFilesCommand,
             refreshReviewedFilesCommand,
             removeReviewedFileCommand,
             reviewChangedFilesAndFocusCommand,
-            goToLineCommand
+            goToLineCommand,
+            clearResultsCommand,
+            refreshStatusCommand,
+            refreshQuickActionsCommand
         );
 
         // Başlangıç mesajı
