@@ -2,6 +2,7 @@ import { IAgentProvider, ProviderConfig } from '../types';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { GeminiProvider } from './GeminiProvider';
 import { CustomProvider } from './CustomProvider';
+import { OpenAIProvider } from './OpenAIProvider';
 
 /**
  * Factory class for AI providers
@@ -10,7 +11,8 @@ import { CustomProvider } from './CustomProvider';
 export class ProviderFactory {
     private static providers: Map<string, () => IAgentProvider> = new Map<string, () => IAgentProvider>([
         ['openrouter', () => new OpenRouterProvider()],
-        ['gemini', () => new GeminiProvider()]
+        ['gemini', () => new GeminiProvider()],
+        ['openai', () => new OpenAIProvider()]
     ]);
 
     /**

@@ -1,10 +1,10 @@
 # Free AI Code Reviewer
 
-VS Code için ücretsiz AI destekli kod inceleme eklentisi. OpenRouter, Google Gemini ve özel AI sağlayıcıları ile kodunuzu analiz edin ve kalitesini artırın.
+VS Code için ücretsiz AI destekli kod inceleme eklentisi. OpenAI, OpenRouter, Google Gemini ve özel AI sağlayıcıları ile kodunuzu analiz edin ve kalitesini artırın.
 
 ## 🚀 Özellikler
 
-- **Çoklu AI Sağlayıcı Desteği**: OpenRouter, Google Gemini ve özel endpoint'ler
+- **Çoklu AI Sağlayıcı Desteği**: OpenAI, OpenRouter, Google Gemini ve özel endpoint'ler
 - **Akıllı Kod İncelemesi**: AI destekli kod kalitesi analizi
 - **Git Entegrasyonu**: Değişen dosyaları otomatik tespit
 - **Gerçek Zamanlı Geri Bildirim**: VS Code Problems panelinde sonuçlar
@@ -40,6 +40,12 @@ Free AI Code Reviewer: Set API Key
 ```
 
 ### 2. Desteklenen Sağlayıcılar
+
+#### OpenAI
+
+- [OpenAI Platform](https://platform.openai.com/api-keys) hesabı oluşturun
+- API anahtarınızı alın
+- GPT-4, GPT-3.5-turbo, o1-preview, o1-mini modellerine erişim
 
 #### OpenRouter
 
@@ -156,8 +162,12 @@ Dosya kaydedildiğinde otomatik inceleme için ayarları açın:
 
 ```json
 {
-	"freeAICodeReviewer.provider": "openrouter",
+	"freeAICodeReviewer.provider": "openai",
 	"freeAICodeReviewer.model": "",
+	"freeAICodeReviewer.apiKey.openai": "",
+	"freeAICodeReviewer.apiKey.openrouter": "",
+	"freeAICodeReviewer.apiKey.gemini": "",
+	"freeAICodeReviewer.apiKey.custom": "",
 	"freeAICodeReviewer.customEndpoint": "",
 	"freeAICodeReviewer.customHeaders": {},
 	"freeAICodeReviewer.autoReviewOnSave": false
